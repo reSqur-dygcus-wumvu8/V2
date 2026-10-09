@@ -207,6 +207,20 @@ public final class BaseDonneesService: Sendable {
             }
         }
 
+        // v3 — journal d'exécution des veilles.
+        migrator.registerMigration("v3_journal_execution") { db in
+            try db.create(table: "executionJournal") { t in
+                t.autoIncrementedPrimaryKey("rowid")
+                t.column("id", .text).notNull().unique()
+                t.column("veilleId", .text).notNull().references("veille")
+                t.column("date", .datetime).notNull()
+                t.column("succes", .boolean).notNull()
+                t.column("nbNouveaux", .integer).notNull()
+                t.column("message", .text).notNull()
+            }
+            try db.create(index: "idx_journal_veille", on: "executionJournal", columns: ["veilleId"])
+        }
+
         try migrator.migrate(pool)
     }
 }

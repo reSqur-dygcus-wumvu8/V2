@@ -25,3 +25,6 @@ jobs:
       - name: Tests PackageIntelligence
         working-directory: Packages/PackageIntelligence
         run: swift test
+      - name: Tests FeatureAcquerir
+        working-directory: Packages/Features/FeatureAcquerir
+        run: swift test

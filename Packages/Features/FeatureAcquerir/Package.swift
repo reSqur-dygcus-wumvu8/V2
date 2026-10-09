@@ -10,15 +10,22 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../PackageDomain"),
-        .package(path: "../../PackageNetworking")
+        .package(path: "../../PackageNetworking"),
+        .package(path: "../../PackagePersistence")
     ],
     targets: [
         .target(
             name: "FeatureAcquerir",
             dependencies: [
                 .product(name: "PackageDomain", package: "PackageDomain"),
-                .product(name: "PackageNetworking", package: "PackageNetworking")
+                .product(name: "PackageNetworking", package: "PackageNetworking"),
+                .product(name: "PackagePersistence", package: "PackagePersistence")
             ]
+        ),
+        .testTarget(
+            name: "FeatureAcquerirTests",
+            dependencies: ["FeatureAcquerir"],
+            path: "Tests/FeatureAcquerirTests"
         )
     ]
 )
