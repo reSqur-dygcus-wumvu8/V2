@@ -32,7 +32,9 @@ Server/
 
 ## Démarrage
 
-1. Ouvrir `App/OSINTSuite` dans Xcode (les packages SPM locaux se résolvent automatiquement).
+1. Générer le projet Xcode avec [XcodeGen](https://github.com/yonaskolb/XcodeGen) :
+   `brew install xcodegen && xcodegen generate` (voir `docs/XCODE.md` — renseigner le
+   Team ID dans `project.yml` avant génération).
 2. Déployer le proxy : `cd Server/ProxyVapor && swift run` avec `.env` contenant
    `MISTRAL_API_KEY=…` et `TOKEN_CLIENT=…` (le `.env` est ignoré par Git).
 3. Tests : `for p in Packages/PackageDomain Packages/PackagePersistence Packages/PackageNetworking Packages/PackageIntelligence; do (cd $p && swift test); done`

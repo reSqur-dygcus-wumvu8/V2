@@ -1,0 +1,194 @@
+name: OSINTSuite
+options:
+  bundleIdPrefix: fr.osintsuite
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+  createIntermediateGroups: true
+  xcodeVersion: "15.4"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    DEVELOPMENT_TEAM: "__TEAM_ID__"          # <- renseigner le Team ID Apple
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+packages:
+  PackageDomain:
+    path: Packages/PackageDomain
+  PackagePersistence:
+    path: Packages/PackagePersistence
+  PackageSync:
+    path: Packages/PackageSync
+  PackageIntelligence:
+    path: Packages/PackageIntelligence
+  PackageNetworking:
+    path: Packages/PackageNetworking
+  PackageAcces:
+    path: Packages/PackageAcces
+  FeatureHome:
+    path: Packages/Features/FeatureHome
+  FeatureAcquerir:
+    path: Packages/Features/FeatureAcquerir
+  FeatureCapitaliser:
+    path: Packages/Features/FeatureCapitaliser
+  FeatureExploiter:
+    path: Packages/Features/FeatureExploiter
+  FeatureGerer:
+    path: Packages/Features/FeatureGerer
+
+# Templates : une cible par plateforme pour chaque application multiplateforme.
+targetTemplates:
+  AppMultiplateforme:
+    type: application
+    settings:
+      base:
+        SWIFT_VERSION: "5.10"
+        GENERATE_INFOPLIST_FILE: YES
+        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0"
+
+targets:
+
+  # ---------------------------------------------------------------- OSINT Suite
+  OSINTSuite-iOS:
+    templates: [AppMultiplateforme]
+    platform: iOS
+    sources:
+      - path: App/OSINTSuite/OSINTSuiteApp.swift
+    dependencies:
+      - package: FeatureHome
+      - package: FeatureAcquerir
+      - package: FeatureCapitaliser
+      - package: FeatureExploiter
+      - package: FeatureGerer
+      - package: PackageAcces
+      - package: PackagePersistence
+      - package: PackageDomain
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.osintsuite.app
+        CODE_SIGN_ENTITLEMENTS: App/OSINTSuite/OSINTSuite.entitlements
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Déverrouillage de la base chiffrée via le Gestionnaire d'accès."
+        SUPPORTS_MACCATALYST: NO
+    entitlements:
+      path: App/OSINTSuite/OSINTSuite.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+        keychain-access-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+
+  OSINTSuite-macOS:
+    templates: [AppMultiplateforme]
+    platform: macOS
+    sources:
+      - path: App/OSINTSuite/OSINTSuiteApp.swift
+    dependencies:
+      - package: FeatureHome
+      - package: FeatureAcquerir
+      - package: FeatureCapitaliser
+      - package: FeatureExploiter
+      - package: FeatureGerer
+      - package: PackageAcces
+      - package: PackagePersistence
+      - package: PackageDomain
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.osintsuite.app
+        CODE_SIGN_ENTITLEMENTS: App/OSINTSuite/OSINTSuite-macOS.entitlements
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Déverrouillage de la base chiffrée via le Gestionnaire d'accès."
+    entitlements:
+      path: App/OSINTSuite/OSINTSuite-macOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+        keychain-access-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+
+  # -------------------------------------------------------- Gestionnaire d'accès
+  AccessManager-iOS:
+    templates: [AppMultiplateforme]
+    platform: iOS
+    sources:
+      - path: App/AccessManager/GestionnaireAccesApp.swift
+    dependencies:
+      - package: PackageAcces
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.osintsuite.acces
+        CODE_SIGN_ENTITLEMENTS: App/AccessManager/AccessManager.entitlements
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Authentification requise pour délivrer la clé de session."
+    entitlements:
+      path: App/AccessManager/AccessManager.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+        keychain-access-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+
+  AccessManager-macOS:
+    templates: [AppMultiplateforme]
+    platform: macOS
+    sources:
+      - path: App/AccessManager/GestionnaireAccesApp.swift
+    dependencies:
+      - package: PackageAcces
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.osintsuite.acces
+        CODE_SIGN_ENTITLEMENTS: App/AccessManager/AccessManager-macOS.entitlements
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Authentification requise pour délivrer la clé de session."
+    entitlements:
+      path: App/AccessManager/AccessManager-macOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+        keychain-access-groups:
+          - "__TEAM_ID__.fr.osintsuite.shared"
+        com.apple.security.app-sandbox: true
+        # Aucun accès réseau : application 100 % hors ligne.
+
+  # ------------------------------------------------------ Collecteur (Mac hub)
+  Collecteur:
+    type: tool
+    platform: macOS
+    sources:
+      - path: App/OSINTSuite/Collecteur/Sources/Collecteur
+    dependencies:
+      - package: PackageDomain
+      - package: PackageNetworking
+      - package: PackagePersistence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.osintsuite.collecteur
+        SWIFT_VERSION: "5.10"
+
+schemes:
+  OSINTSuite-iOS:
+    build:
+      targets:
+        OSINTSuite-iOS: all
+  OSINTSuite-macOS:
+    build:
+      targets:
+        OSINTSuite-macOS: all
+  AccessManager-iOS:
+    build:
+      targets:
+        AccessManager-iOS: all
+  AccessManager-macOS:
+    build:
+      targets:
+        AccessManager-macOS: all
+  Collecteur:
+    build:
+      targets:
+        Collecteur: all
