@@ -22,6 +22,11 @@ let package = Package(
                 .product(name: "PackagePersistence", package: "PackagePersistence"),
                 .product(name: "PackageIntelligence", package: "PackageIntelligence")
             ]
+        ),
+        .testTarget(
+            name: "FeatureCapitaliserTests",
+            dependencies: ["FeatureCapitaliser"],
+            path: "Tests/FeatureCapitaliserTests"
         )
     ]
 )

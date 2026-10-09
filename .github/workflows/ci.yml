@@ -28,3 +28,6 @@ jobs:
       - name: Tests FeatureAcquerir
         working-directory: Packages/Features/FeatureAcquerir
         run: swift test
+      - name: Tests FeatureCapitaliser
+        working-directory: Packages/Features/FeatureCapitaliser
+        run: swift test
