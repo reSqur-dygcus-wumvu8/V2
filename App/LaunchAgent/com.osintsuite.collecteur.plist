@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- LaunchAgent du « Mac hub » : exécution périodique du collecteur de veilles. -->
+    <key>Label</key>
+    <string>com.osintsuite.collecteur</string>
+
+    <!-- Chemin du binaire : à ajuster après installation dans /Applications. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/OSINTSuite.app/Contents/Resources/collecteur</string>
+        <string>__CHEMIN_BASE__</string>
+        <string>__PASSPHRASE__</string>
+    </array>
+
+    <!-- Toutes les 15 minutes ; la passphrase est injectée à l'installation
+         par l'application macOS au premier déverrouillage (le modèle à deux
+         niveaux impose une session active pour régénérer le plist). -->
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/com.osintsuite.collecteur.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/com.osintsuite.collecteur.err</string>
+
+    <!-- Sécurité : pas de réseau sortant autre que les veilles ; échec silencieux
+         si la base est verrouillée (mauvaise passphrase). -->
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

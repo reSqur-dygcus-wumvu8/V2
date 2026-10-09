@@ -33,3 +33,28 @@
 - Les éléments du trousseau persistent après désinstallation d'une app (iOS) :
   documenté dans l'aide utilisateur du Gestionnaire d'accès.
 - Friction d'usage compensée par la durée de session réglable.
+
+## Branchements production (Étape 6 — suite)
+
+1. **KEK Secure Enclave** : `FournisseurKEKSecureEnclave` (`PackageAcces/FournisseurKEK.swift`)
+   stocke la KEK avec `kSecAttrTokenIDSecureEnclave` + AccessControl `userPresence`
+   (Face ID / Touch ID, repli code). Le Gestionnaire d'accès l'utilise à son lancement ;
+   sur simulateur (pas de Secure Enclave), repli KEK logicielle documenté.
+2. **Trousseau partagé** : `TrousseauSessionPartage` (`groupePartage` = Team ID commun,
+   ex. `XXXXXXXXXX.fr.osintsuite.shared`). Seule la clé de session (32 octets clé +
+   8 octets expiration) y est écrite ; purge à l'expiration ou à l'arrière-plan.
+   La KEK n'y est jamais placée.
+3. **Flux de déverrouillage complet** :
+   - OSINT Suite lit la session (`lireSession`) → déballe la DEK enveloppée
+     (stockée dans le trousseau du service principal) → ouvre la base SQLCipher ;
+   - sans session : écran verrouillé → App Intent `IntentDeverrouillage` →
+     authentification biométrique côté compagnon → session publiée ;
+   - passage en arrière-plan : `verrouiller()` purge la session et ferme la base.
+4. **Mac hub** : exécutable `Collecteur` (`App/OSINTSuite/Collecteur`) exécuté par le
+   LaunchAgent `App/LaunchAgent/com.osintsuite.collecteur.plist` (toutes les 15 min).
+   La passphrase DEK est passée en argument au moment de l'installation par l'app
+   macOS (jamais stockée en clair sur disque) ; ajuster `__CHEMIN_BASE__`.
+5. **Entitlements à configurer dans Xcode** (les deux apps, même Team ID) :
+   - Keychain Sharing : groupe `fr.osintsuite.shared` (valeur avec préfixe Team ID) ;
+   - App Groups (optionnel, fichiers binaires chiffrés) ;
+   - Face ID usage (NSFaceIDUsageDescription) pour le Gestionnaire d'accès.

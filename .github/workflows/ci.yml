@@ -37,6 +37,9 @@ jobs:
       - name: Tests PackageAcces
         working-directory: Packages/PackageAcces
         run: swift test
+      - name: Construction Collecteur (Mac hub)
+        working-directory: App/OSINTSuite/Collecteur
+        run: swift build
       - name: Tests FeatureCapitaliser
         working-directory: Packages/Features/FeatureCapitaliser
         run: swift test
