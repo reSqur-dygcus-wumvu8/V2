@@ -129,15 +129,18 @@ public final class ModeleVeilles: ObservableObject {
     private let entrepotVeille: EntrepotVeille
     private let entrepotElements: EntrepotElementVeille
     private let orchestrateur: OrchestrateurVeille
+    private let serviceAlertes: ServiceAlertes
 
     public init(
         entrepotVeille: EntrepotVeille,
         entrepotElements: EntrepotElementVeille,
-        orchestrateur: OrchestrateurVeille = OrchestrateurVeille()
+        orchestrateur: OrchestrateurVeille = OrchestrateurVeille(),
+        serviceAlertes: ServiceAlertes = ServiceAlertes()
     ) {
         self.entrepotVeille = entrepotVeille
         self.entrepotElements = entrepotElements
         self.orchestrateur = orchestrateur
+        self.serviceAlertes = serviceAlertes
     }
 
     /// Recharge les veilles depuis la base.
@@ -184,7 +187,9 @@ public final class ModeleVeilles: ObservableObject {
         for veille in actives {
             let hashes = (try? entrepotElements.hashesVus(veilleId: veille.id)) ?? []
             let resultat = await orchestrateur.executer(veille: veille, hashesVus: hashes)
-            _ = try? entrepotElements.insererNouveaux(resultat.nouveauxElements)
+            let inseres = (try? entrepotElements.insererNouveaux(resultat.nouveauxElements)) ?? []
+            // Alerte locale si un nouvel élément atteint le seuil de priorité.
+            await serviceAlertes.evaluer(elements: inseres, veille: veille)
             try? entrepotVeille.journaliser(
                 ResultatJournal(
                     veilleId: veille.id,
