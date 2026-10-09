@@ -31,6 +31,9 @@ jobs:
       - name: Tests FeatureExploiter
         working-directory: Packages/Features/FeatureExploiter
         run: swift test
+      - name: Tests FeatureGerer
+        working-directory: Packages/Features/FeatureGerer
+        run: swift test
       - name: Tests FeatureCapitaliser
         working-directory: Packages/Features/FeatureCapitaliser
         run: swift test

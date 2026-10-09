@@ -221,6 +221,18 @@ public final class BaseDonneesService: Sendable {
             try db.create(index: "idx_journal_veille", on: "executionJournal", columns: ["veilleId"])
         }
 
+        // v4 — journal des fusions.
+        migrator.registerMigration("v4_journal_fusion") { db in
+            try db.create(table: "fusionJournal") { t in
+                t.autoIncrementedPrimaryKey("rowid")
+                t.column("id", .text)
+                t.column("entiteGardee", .text).notNull()
+                t.column("entiteFusionnee", .text).notNull()
+                t.column("champsChoisis", .text).notNull()
+                t.column("date", .datetime).notNull()
+            }
+        }
+
         try migrator.migrate(pool)
     }
 }

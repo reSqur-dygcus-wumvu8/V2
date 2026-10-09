@@ -19,6 +19,11 @@ let package = Package(
                 .product(name: "PackageDomain", package: "PackageDomain"),
                 .product(name: "PackagePersistence", package: "PackagePersistence")
             ]
+        ),
+        .testTarget(
+            name: "FeatureGererTests",
+            dependencies: ["FeatureGerer"],
+            path: "Tests/FeatureGererTests"
         )
     ]
 )
