@@ -136,8 +136,114 @@ public enum RegistreConnecteurs {
         switch plateforme {
         case .xTwitter: return ConnecteurX()
         case .telegram: return ConnecteurTelegram()
-        // Discord (bot/webhook) et TikTok (import manuel) : Étape suivante.
+        // Discord exige un token bot (Keychain) et TikTok un import manuel :
+        // instanciés explicitement par l'appelant, pas par le registre générique.
         case .discord, .tiktok: return nil
+        }
+    }
+}
+
+/// Connecteur Discord : lecture des messages d'un canal via l'API bot.
+/// Méthode documentée : l'API complète exige un bot invité sur le serveur
+/// (token conservé dans le Keychain, jamais dans le code). Risque : le bot
+/// doit avoir l'autorisation View Channel sur le canal surveillé ; les
+/// invites publiques seules ne donnent pas accès à l'historique.
+public struct ConnecteurDiscord: SocialFeedProvider {
+
+    public var plateforme: PlateformeSociale { .discord }
+
+    /// URL de l'API Discord v10.
+    public static let apiBase = "https://discord.com/api/v10"
+
+    /// Token du bot (Keychain côté application).
+    public var tokenBot: String
+    /// Identifiant du canal à surveiller.
+    public var idCanal: String
+
+    public init(tokenBot: String, idCanal: String) {
+        self.tokenBot = tokenBot
+        self.idCanal = idCanal
+    }
+
+    public func recuperer(configuration: ConfigurationConnecteur) async throws -> [ElementVeille] {
+        // L'identifiant de configuration peut surcharger celui du connecteur.
+        let canal = configuration.identifiant.isEmpty ? idCanal : configuration.identifiant
+        guard !canal.isEmpty else { throw ErreurVeille.urlInvalide }
+        guard let url = URL(string: "\(Self.apiBase)/channels/\(canal)/messages?limit=50") else {
+            throw ErreurVeille.urlInvalide
+        }
+        var requete = URLRequest(url: url)
+        requete.setValue("Bot \(tokenBot)", forHTTPHeaderField: "Authorization")
+        let (donnees, _) = try await URLSession.shared.data(for: requete)
+        return try Self.decoderMessages(donnees: donnees, idCanal: canal)
+    }
+
+    /// Décode la réponse JSON de l'API Discord en éléments de veille.
+    static func decoderMessages(donnees: Data, idCanal: String) throws -> [ElementVeille] {
+        struct MessageDiscord: Codable {
+            var id: String
+            var content: String
+            var timestamp: String
+            var author: Auteur?
+            struct Auteur: Codable { var username: String? }
+        }
+        let messages = try JSONDecoder().decode([MessageDiscord].self, from: donnees)
+        return messages.compactMap { message in
+            let texte = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !texte.isEmpty else { return nil }
+            let auteur = message.author?.username ?? "inconnu"
+            let lien = "https://discord.com/channels/\(idCanal)/\(message.id)"
+            return ElementVeille(
+                veilleId: UUID(),
+                url: lien,
+                titre: "\(auteur) : \(String(texte.prefix(60)))",
+                contenu: texte,
+                datePublication: ConnecteurTelegram.parserDateISO(message.timestamp),
+                hashContenu: OrchestrateurVeille.hashSHA256(lien + texte)
+            )
+        }
+    }
+}
+
+/// Connecteur TikTok : aucune API publique — import manuel d'un export ou
+/// collage de publications par l'utilisateur (best effort documenté).
+/// Risque : le scraping non officiel est instable et contrevient aux CGU ;
+/// la méthode retenue est l'import manuel (fichier d'export ou texte collé).
+public struct ConnecteurTikTok: SocialFeedProvider {
+
+    public var plateforme: PlateformeSociale { .tiktok }
+
+    public init() {}
+
+    /// L'import manuel ne récupère rien automatiquement : l'API publique
+    /// n'existe pas ; lève l'erreur explicite invitant à l'import manuel.
+    public func recuperer(configuration: ConfigurationConnecteur) async throws -> [ElementVeille] {
+        throw ErreurVeille.importManuelRequis
+    }
+
+    /// Import manuel : transforme des publications collées (une par ligne,
+    /// format « url | texte » ou texte simple) en éléments de veille.
+    public static func importerManuel(lignes: [String], veilleId: UUID) -> [ElementVeille] {
+        lignes.enumerated().compactMap { (index, ligne) in
+            let nettoyee = ligne.trimmingCharacters(in: .whitespaces)
+            guard !nettoyee.isEmpty else { return nil }
+            let parties = nettoyee.split(separator: "|", maxSplits: 1)
+            let url: String
+            let texte: String
+            if parties.count == 2, parties[0].contains("http") {
+                url = parties[0].trimmingCharacters(in: .whitespaces)
+                texte = parties[1].trimmingCharacters(in: .whitespaces)
+            } else {
+                url = "import://tiktok/\(index)"
+                texte = nettoyee
+            }
+            return ElementVeille(
+                veilleId: veilleId,
+                url: url,
+                titre: String(texte.prefix(80)),
+                contenu: texte,
+                hashContenu: OrchestrateurVeille.hashSHA256(url + texte)
+            )
         }
     }
 }

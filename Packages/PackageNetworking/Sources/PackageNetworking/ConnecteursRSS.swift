@@ -59,11 +59,13 @@ public struct ConnecteurRSS: Sendable {
 public enum ErreurVeille: Error, LocalizedError {
     case fluxIllisible
     case urlInvalide
+    case importManuelRequis
 
     public var errorDescription: String? {
         switch self {
         case .fluxIllisible: return "Flux RSS/Atom illisible."
         case .urlInvalide: return "URL de flux invalide."
+        case .importManuelRequis: return "Cette plateforme n'expose pas d'API publique : utilisez l'import manuel (export ou collage)."
         }
     }
 }
