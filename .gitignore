@@ -1,0 +1,20 @@
+# Secrets — jamais de clé en clair dans le dépôt
+.env
+.env.*
+*.pem
+*.p12
+Secrets/
+
+# Xcode / SPM
+.build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.swiftpm/
+.DS_Store
+
+# Bases locales et exports chiffrés de test
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
