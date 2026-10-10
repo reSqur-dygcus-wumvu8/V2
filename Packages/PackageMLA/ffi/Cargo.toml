@@ -1,0 +1,13 @@
+# FFI Rust vers MLA (ANSSI) — compilée en xcframework macOS/iOS.
+# Voir scripts/build-mla-xcframework.sh.
+[package]
+name = "mla-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "mlaffi"
+crate-type = ["staticlib"]
+
+[dependencies]
+mla = "1.3"

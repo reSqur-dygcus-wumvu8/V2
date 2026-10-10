@@ -1,8 +1,10 @@
 // swift-tools-version:5.10
 import PackageDescription
 
-/// Package Persistence : base GRDB chiffrée SQLCipher, migrations, FTS,
-/// accès trousseau Keychain. Testable sans interface graphique.
+/// PackagePersistence : moteur de stockage sur archives chiffrées MLA.
+/// Jeu de travail en mémoire (index, recherche plein texte, graphe) +
+/// consolidation des archives MLA à la mise au repos. Les API d'entrepôts
+/// (Entite, Document, Veille, ElementVeille, Doublon…) sont conservées.
 let package = Package(
     name: "PackagePersistence",
     platforms: [.macOS(.v14), .iOS(.v17)],
@@ -10,22 +12,21 @@ let package = Package(
         .library(name: "PackagePersistence", targets: ["PackagePersistence"])
     ],
     dependencies: [
-        // GRDB avec SQLCipher intégré : chiffrement de la base au repos.
-        .package(url: "https://github.com/groue/GRDB.swift", from: "6.29.0"),
-        // Domain local (entités, cotations, règles métier).
-        .package(path: "../PackageDomain")
+        .package(path: "../PackageDomain"),
+        .package(path: "../PackageMLA")
     ],
     targets: [
         .target(
             name: "PackagePersistence",
             dependencies: [
-                .product(name: "GRDB", package: "GRDB.swift"),
-                .product(name: "PackageDomain", package: "PackageDomain")
+                .product(name: "PackageDomain", package: "PackageDomain"),
+                .product(name: "PackageMLA", package: "PackageMLA")
             ]
         ),
         .testTarget(
             name: "PackagePersistenceTests",
-            dependencies: ["PackagePersistence"]
+            dependencies: ["PackagePersistence"],
+            path: "Tests/PackagePersistenceTests"
         )
     ]
 )

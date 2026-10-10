@@ -62,6 +62,9 @@ public struct Entite: Codable, Sendable, Equatable, Identifiable {
     public var cotationSource: FiabiliteSource?
     public var createdAt: Date
     public var updatedAt: Date
+    /// Tombstone : entité supprimée logiquement (jamais d'effacement physique,
+    /// compatible fusion CRDT).
+    public var supprime: Bool = false
 
     public init(
         id: UUID = UUID(),

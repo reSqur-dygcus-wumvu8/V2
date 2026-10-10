@@ -1,0 +1,14 @@
+# FFI Rust vers Arti (client Tor officiel) — compilée en xcframework.
+# Voir scripts/build-tor-xcframework.sh.
+[package]
+name = "arti-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "artiffi"
+crate-type = ["staticlib"]
+
+[dependencies]
+arti = "1.2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
