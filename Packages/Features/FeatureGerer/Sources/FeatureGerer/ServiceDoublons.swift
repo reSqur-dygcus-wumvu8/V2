@@ -41,8 +41,8 @@ public struct ServiceDoublons: Sendable {
     /// (Jaccard sur mots normalisés), hors paires déjà refusées.
     @discardableResult
     public func detecterDoublonsEntites() throws -> [PropositionDoublon] {
-        let entites = try entrepotEntite.toutes()
-        let refusees = try entrepotDoublon.refusees()
+        let entites = entrepotEntite.toutes()
+        let refusees = entrepotDoublon.refusees()
         var propositions: [PropositionDoublon] = []
         for i in 0..<entites.count {
             for j in (i + 1)..<entites.count {
@@ -57,7 +57,7 @@ public struct ServiceDoublons: Sendable {
                 )
                 if score >= seuils.similariteDenomination {
                     let proposition = PropositionDoublon(idA: a.id, idB: b.id, score: score)
-                    try entrepotDoublon.enregistrer(proposition)
+                    entrepotDoublon.enregistrer(proposition)
                     propositions.append(proposition)
                 }
             }
@@ -70,8 +70,8 @@ public struct ServiceDoublons: Sendable {
     /// contenus quasi identiques).
     @discardableResult
     public func detecterDoublonsDocuments() throws -> [PropositionDoublon] {
-        let documents = try entrepotDocument.tous()
-        let refusees = try entrepotDoublon.refusees()
+        let documents = entrepotDocument.tous()
+        let refusees = entrepotDoublon.refusees()
         var propositions: [PropositionDoublon] = []
         for i in 0..<documents.count {
             for j in (i + 1)..<documents.count {
@@ -87,7 +87,7 @@ public struct ServiceDoublons: Sendable {
                 )
                 if score >= seuils.similariteTexte {
                     let proposition = PropositionDoublon(idA: a.id, idB: b.id, score: score)
-                    try entrepotDoublon.enregistrer(proposition)
+                    entrepotDoublon.enregistrer(proposition)
                     propositions.append(proposition)
                 }
             }
@@ -115,17 +115,17 @@ public struct ServiceDoublons: Sendable {
             resultat.commentaires = commentaires.isEmpty ? nil : commentaires.joined(separator: "\n")
         }
         resultat.updatedAt = Date()
-        try entrepotEntite.enregistrer(resultat)
+        entrepotEntite.enregistrer(resultat)
 
         // Transfert des relations de l'absorbée vers la conservée.
-        for var relation in try entrepotEntite.relations(id: fusionnee.id) {
+        for var relation in entrepotEntite.relations(id: fusionnee.id) {
             if relation.idSource == fusionnee.id { relation.idSource = gardee.id } else { relation.idCible = gardee.id }
-            try entrepotEntite.relier(relation)
+            entrepotEntite.relier(relation)
         }
         // L'absorbée devient une tombstone.
-        try entrepotEntite.supprimer(fusionnee.id)
+        entrepotEntite.supprimer(fusionnee.id)
         // Journal de fusion.
-        try entrepotDoublon.journaliserFusion(
+        entrepotDoublon.journaliserFusion(
             EntreeFusion(
                 entiteGardee: gardee.id,
                 entiteFusionnee: fusionnee.id,

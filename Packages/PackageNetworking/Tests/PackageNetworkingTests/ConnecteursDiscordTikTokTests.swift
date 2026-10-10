@@ -1,5 +1,6 @@
 import XCTest
 import PackageDomain
+import PackageTor
 @testable import PackageNetworking
 
 /// Tests des connecteurs Discord (décodage API bot) et TikTok (import manuel).
@@ -32,7 +33,7 @@ final class ConnecteursDiscordTikTokTests: XCTestCase {
     }
 
     func testConnecteurDiscordConfig() {
-        let connecteur = ConnecteurDiscord(tokenBot: "token-x", idCanal: "555")
+        let connecteur = ConnecteurDiscord(tokenBot: "token-x", idCanal: "555", reseau: ReseauTor(client: ClientTor()))
         XCTAssertEqual(connecteur.plateforme, .discord)
         XCTAssertEqual(connecteur.idCanal, "555")
         XCTAssertEqual(ConnecteurDiscord.apiBase, "https://discord.com/api/v10")

@@ -1,5 +1,6 @@
 import Foundation
 import PackageDomain
+import PackageTor
 
 /// Client du proxy Mistral. Toutes les requêtes passent par le serveur
 /// proxy Vapor qui détient la clé API — l'app cliente ne la connaît jamais.
@@ -55,11 +56,11 @@ public actor ClientProxyMistral: Sendable {
     // MARK: - Privé
 
     private let configuration: Configuration
-    private let session: URLSession
+    private let reseau: ReseauTor
 
-    public init(configuration: Configuration, session: URLSession = .shared) {
+    public init(configuration: Configuration, reseau: ReseauTor) {
         self.configuration = configuration
-        self.session = session
+        self.reseau = reseau
     }
 
     private func envoyer(_ requete: MultipartUpload) async throws -> String {
@@ -76,11 +77,8 @@ public actor ClientProxyMistral: Sendable {
         requete.setValue("Bearer \(configuration.token)", forHTTPHeaderField: "Authorization")
         requete.timeoutInterval = 30
         requete.httpBody = upload.corps()
-        let (data, reponse) = try await session.data(for: requete)
-        guard let http = reponse as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ErreurProxy.statutInattendu
-        }
-        return data
+        // Le proxy Mistral est joint via Tor (URL .onion ou acceptant Tor).
+        return try await reseau.envoyer(requete)
     }
 }
 

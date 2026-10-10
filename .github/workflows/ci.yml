@@ -16,6 +16,12 @@ jobs:
       - name: Tests PackageDomain
         working-directory: Packages/PackageDomain
         run: swift test
+      - name: Tests PackageMLA
+        working-directory: Packages/PackageMLA
+        run: swift test
+      - name: Tests PackageTor
+        working-directory: Packages/PackageTor
+        run: swift test
       - name: Tests PackagePersistence
         working-directory: Packages/PackagePersistence
         run: swift test

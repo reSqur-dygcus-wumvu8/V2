@@ -134,7 +134,7 @@ public final class ModeleVeilles: ObservableObject {
     public init(
         entrepotVeille: EntrepotVeille,
         entrepotElements: EntrepotElementVeille,
-        orchestrateur: OrchestrateurVeille = OrchestrateurVeille(),
+        orchestrateur: OrchestrateurVeille,
         serviceAlertes: ServiceAlertes = ServiceAlertes()
     ) {
         self.entrepotVeille = entrepotVeille

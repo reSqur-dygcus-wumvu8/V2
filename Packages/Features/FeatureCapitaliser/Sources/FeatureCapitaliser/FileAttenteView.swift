@@ -110,7 +110,7 @@ public final class ModeleFileAttente: ObservableObject {
             var regroupement = try await service.creerRegroupement(titre: titreRegroupement, elements: choisis)
             if let cotation = cotationFinale {
                 regroupement.cotation = cotation
-                try service.entrepotRegroupement.enregistrer(regroupement)
+                service.entrepotRegroupement.enregistrer(regroupement)
             }
             message = "Regroupement capitalisé (\(choisis.count) élément(s))."
             selection = []

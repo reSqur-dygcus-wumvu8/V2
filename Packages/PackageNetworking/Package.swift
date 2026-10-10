@@ -10,12 +10,14 @@ let package = Package(
         .library(name: "PackageNetworking", targets: ["PackageNetworking"])
     ],
     dependencies: [
-        .package(path: "../PackageDomain")
+        .package(path: "../PackageDomain"),
+        .package(path: "../PackageTor")
     ],
     targets: [
         .target(
             name: "PackageNetworking",
-            dependencies: [.product(name: "PackageDomain", package: "PackageDomain")]
+            dependencies: [.product(name: "PackageDomain", package: "PackageDomain"),
+                .product(name: "PackageTor", package: "PackageTor")]
         ),
         .testTarget(
             name: "PackageNetworkingTests",

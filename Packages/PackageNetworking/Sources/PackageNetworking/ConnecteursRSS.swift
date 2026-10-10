@@ -1,5 +1,6 @@
 import Foundation
 import PackageDomain
+import PackageTor
 
 /// Connecteur Google Actualités : construit l'URL du flux RSS de recherche
 /// à partir des mots-clés et le récupère périodiquement.
@@ -21,11 +22,11 @@ public struct ConnecteurGoogleNews: Sendable {
     /// Récupère et analyse le flux Google News pour la veille donnée.
     public func executer(
         veille: Veille,
-        session: URLSession = .shared,
+        reseau: ReseauTor,
         calculHash: (String) -> String
     ) async throws -> [ElementVeilleBrut] {
         guard let url = urlRecherche(motsCles: veille.motsCles) else { return [] }
-        let (donnees, _) = try await session.data(from: url)
+        let donnees = try await reseau.telecharger(url)
         guard let xml = String(data: donnees, encoding: .utf8) else {
             throw ErreurVeille.fluxIllisible
         }
@@ -43,10 +44,10 @@ public struct ConnecteurRSS: Sendable {
     public func executer(
         urlFlux: URL,
         veilleId: UUID,
-        session: URLSession = .shared,
+        reseau: ReseauTor,
         calculHash: (String) -> String
     ) async throws -> [ElementVeilleBrut] {
-        let (donnees, _) = try await session.data(from: urlFlux)
+        let donnees = try await reseau.telecharger(urlFlux)
         guard let xml = String(data: donnees, encoding: .utf8) else {
             throw ErreurVeille.fluxIllisible
         }

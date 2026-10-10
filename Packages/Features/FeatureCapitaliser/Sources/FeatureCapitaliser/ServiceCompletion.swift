@@ -1,5 +1,6 @@
 import Foundation
 import PackageDomain
+import PackageTor
 import PackagePersistence
 import PackageIntelligence
 
@@ -29,11 +30,11 @@ public struct ServiceCompletion: Sendable {
     }
 
     let clientMistral: ClientProxyMistral?
-    let session: URLSession
+    let reseau: ReseauTor
 
-    public init(clientMistral: ClientProxyMistral? = nil, session: URLSession = .shared) {
+    public init(clientMistral: ClientProxyMistral? = nil, reseau: ReseauTor) {
         self.clientMistral = clientMistral
-        self.session = session
+        self.reseau = reseau
     }
 
     /// Complète une entité à partir de sa dénomination : recherche internet
@@ -71,15 +72,11 @@ public struct ServiceCompletion: Sendable {
         guard let url = URL(string: "https://fr.wikipedia.org/api/rest_v1/page/summary/\(encodee)") else {
             return nil
         }
-        do {
-            let (donnees, _) = try await session.data(from: url)
-            guard let objet = try? JSONSerialization.jsonObject(with: donnees) as? [String: Any],
-                  let extrait = objet["extract"] as? String,
-                  !extrait.isEmpty else { return nil }
-            return extrait
-        } catch {
-            return nil
-        }
+        guard let donnees = try? await reseau.telecharger(url),
+              let objet = try? JSONSerialization.jsonObject(with: donnees) as? [String: Any],
+              let extrait = objet["extract"] as? String,
+              !extrait.isEmpty else { return nil }
+        return extrait
     }
 
     /// Applique une proposition validée à une entité (avec le marqueur

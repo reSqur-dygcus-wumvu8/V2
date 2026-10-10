@@ -11,7 +11,8 @@ let package = Package(
     dependencies: [
         .package(path: "../../PackageDomain"),
         .package(path: "../../PackageNetworking"),
-        .package(path: "../../PackagePersistence")
+        .package(path: "../../PackagePersistence"),
+        .package(path: "../../PackageTor")
     ],
     targets: [
         .target(
@@ -19,7 +20,8 @@ let package = Package(
             dependencies: [
                 .product(name: "PackageDomain", package: "PackageDomain"),
                 .product(name: "PackageNetworking", package: "PackageNetworking"),
-                .product(name: "PackagePersistence", package: "PackagePersistence")
+                .product(name: "PackagePersistence", package: "PackagePersistence"),
+                .product(name: "PackageTor", package: "PackageTor")
             ]
         ),
         .testTarget(

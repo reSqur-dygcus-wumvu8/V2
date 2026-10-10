@@ -1,5 +1,6 @@
 import XCTest
 import PackageDomain
+import PackageTor
 @testable import PackageNetworking
 
 /// Tests du connecteur Telegram (extraction HTML de t.me/s).
@@ -44,10 +45,11 @@ final class ConnecteurTelegramTests: XCTestCase {
     }
 
     func testRegistreFournisseurs() {
-        XCTAssertNotNil(RegistreConnecteurs.fournisseur(pour: .xTwitter))
-        XCTAssertNotNil(RegistreConnecteurs.fournisseur(pour: .telegram))
-        XCTAssertNil(RegistreConnecteurs.fournisseur(pour: .discord))
-        XCTAssertNil(RegistreConnecteurs.fournisseur(pour: .tiktok))
+        let reseau = ReseauTor(client: ClientTor())
+        XCTAssertNotNil(RegistreConnecteurs.fournisseur(pour: .xTwitter, reseau: reseau))
+        XCTAssertNotNil(RegistreConnecteurs.fournisseur(pour: .telegram, reseau: reseau))
+        XCTAssertNil(RegistreConnecteurs.fournisseur(pour: .discord, reseau: reseau))
+        XCTAssertNil(RegistreConnecteurs.fournisseur(pour: .tiktok, reseau: reseau))
     }
 
     func testConfigurationConnecteurCodable() throws {

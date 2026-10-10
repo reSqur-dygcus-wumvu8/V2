@@ -6,28 +6,28 @@ import PackagePersistence
 /// Tests du service de capitalisation (regroupement, reconnaissance, création).
 final class ServiceCapitalisationTests: XCTestCase {
 
-    private var base: BaseDonneesService!
-    private var chemin: String!
+    private var base: MoteurStockage!
+    private var dossier: URL!
     private var service: ServiceCapitalisation!
 
     override func setUpWithError() throws {
-        chemin = NSTemporaryDirectory() + "capitaliser-\(UUID().uuidString).sqlite"
-        base = try BaseDonneesService(cheminBase: chemin, passphrase: "test")
+        dossier = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("capitaliser-\(UUID().uuidString)")
+        base = try MoteurStockage(dossier: dossier, phraseSecrete: "test")
         service = ServiceCapitalisation(
-            entrepotEntite: EntrepotEntite(pool: base.pool),
-            entrepotElements: EntrepotElementVeille(pool: base.pool),
-            entrepotRegroupement: EntrepotRegroupement(pool: base.pool),
+            entrepotEntite: EntrepotEntite(moteur: base),
+            entrepotElements: EntrepotElementVeille(moteur: base),
+            entrepotRegroupement: EntrepotRegroupement(moteur: base),
             clientMistral: nil
         )
     }
 
     override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(atPath: chemin)
+        try? FileManager.default.removeItem(at: dossier)
     }
 
     private func insererElement(titre: String, contenu: String) throws -> ElementVeille {
         let element = ElementVeille(veilleId: UUID(), url: "https://a.fr", titre: titre, contenu: contenu, hashContenu: UUID().uuidString)
-        _ = try EntrepotElementVeille(pool: base.pool).insererNouveaux([element])
+        _ = try EntrepotElementVeille(moteur: base).insererNouveaux([element])
         return element
     }
 
@@ -39,10 +39,10 @@ final class ServiceCapitalisationTests: XCTestCase {
         XCTAssertEqual(regroupement.elementIds.count, 2)
         XCTAssertFalse(regroupement.resume.isEmpty)
 
-        let tous = try EntrepotRegroupement(pool: base.pool).tous()
+        let tous = try EntrepotRegroupement(moteur: base).tous()
         XCTAssertEqual(tous.count, 1)
         // Les éléments sont marqués capitalisés.
-        XCTAssertTrue(try EntrepotElementVeille(pool: base.pool).fileAttente().isEmpty)
+        XCTAssertTrue(try EntrepotElementVeille(moteur: base).fileAttente().isEmpty)
     }
 
     func testPropositionCotationSansProxyEstNeutre() async {
@@ -51,9 +51,9 @@ final class ServiceCapitalisationTests: XCTestCase {
     }
 
     func testReconnaissanceEntitesExistantes() throws {
-        let entrepot = EntrepotEntite(pool: base.pool)
-        try entrepot.enregistrer(Entite(type: .individu, denomination: "Jean Dupont", prenom: "Jean", nom: "Dupont"))
-        try entrepot.enregistrer(Entite(type: .lieu, denomination: "Lyon"))
+        let entrepot = EntrepotEntite(moteur: base)
+        entrepot.enregistrer(Entite(type: .individu, denomination: "Jean Dupont", prenom: "Jean", nom: "Dupont"))
+        entrepot.enregistrer(Entite(type: .lieu, denomination: "Lyon"))
 
         let reconnues = try service.reconnaitreEntites(dans: "Jean Dupont a été vu à Lyon hier.")
         XCTAssertEqual(reconnues.count, 2)
@@ -62,7 +62,7 @@ final class ServiceCapitalisationTests: XCTestCase {
     }
 
     func testReconnaissanceSansCorrespondance() throws {
-        try service.entrepotEntite.enregistrer(Entite(type: .organisation, denomination: "ACME"))
+        service.entrepotEntite.enregistrer(Entite(type: .organisation, denomination: "ACME"))
         let reconnues = try service.reconnaitreEntites(dans: "Rien de pertinent ici.")
         XCTAssertTrue(reconnues.isEmpty)
     }
@@ -78,23 +78,23 @@ final class ServiceCapitalisationTests: XCTestCase {
     }
 
     func testHistoriqueEtRelations() throws {
-        let entrepot = EntrepotEntite(pool: base.pool)
+        let entrepot = EntrepotEntite(moteur: base)
         var entite = Entite(type: .organisation, denomination: "ACME")
-        try entrepot.enregistrer(entite)
+        entrepot.enregistrer(entite)
 
         var modifiee = entite
         modifiee.resume = "Nouvelle synthèse"
         modifiee.updatedAt = Date()
-        try entrepot.enregistrer(modifiee)
-        try entrepot.journaliser(VersionEntite(entiteId: entite.id, champsModifies: ["resume"], appareil: "Mac"))
+        entrepot.enregistrer(modifiee)
+        entrepot.journaliser(VersionEntite(entiteId: entite.id, champsModifies: ["resume"], appareil: "Mac"))
 
-        let historique = try entrepot.historique(entiteId: entite.id)
+        let historique = entrepot.historique(entiteId: entite.id)
         XCTAssertEqual(historique.count, 1)
         XCTAssertEqual(historique.first?.champsModifies, ["resume"])
 
         let autre = Entite(type: .individu, denomination: "Contact ACME")
-        try entrepot.enregistrer(autre)
-        try entrepot.relier(RelationEntites(idSource: entite.id, idCible: autre.id, typeRelation: "employeur"))
-        XCTAssertEqual(try entrepot.relations(id: entite.id).count, 1)
+        entrepot.enregistrer(autre)
+        entrepot.relier(RelationEntites(idSource: entite.id, idCible: autre.id, typeRelation: "employeur"))
+        XCTAssertEqual(entrepot.relations(id: entite.id).count, 1)
     }
 }

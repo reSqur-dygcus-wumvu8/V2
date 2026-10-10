@@ -1,5 +1,6 @@
 import Foundation
 import PackageDomain
+import PackageTor
 
 /// Connecteur X (Twitter) : flux RSS tiers (nitter) ou API officielle si un
 /// token est disponible. Risque documenté : les instances non officielles
@@ -10,16 +11,18 @@ public struct ConnecteurX: SocialFeedProvider {
 
     /// Instance nitter utilisée (flux RSS tiers).
     public var instanceNitter: String
+    private let reseau: ReseauTor
 
-    public init(instanceNitter: String = "https://nitter.net") {
+    public init(instanceNitter: String = "https://nitter.net", reseau: ReseauTor) {
         self.instanceNitter = instanceNitter
+        self.reseau = reseau
     }
 
     public func recuperer(configuration: ConfigurationConnecteur) async throws -> [ElementVeille] {
         guard let url = URL(string: "\(instanceNitter)/\(configuration.identifiant)/rss") else {
             throw ErreurVeille.urlInvalide
         }
-        let (donnees, _) = try await URLSession.shared.data(from: url)
+        let donnees = try await reseau.telecharger(url)
         guard let xml = String(data: donnees, encoding: .utf8) else {
             throw ErreurVeille.fluxIllisible
         }
@@ -44,8 +47,11 @@ public struct ConnecteurX: SocialFeedProvider {
 public struct ConnecteurTelegram: SocialFeedProvider {
 
     public var plateforme: PlateformeSociale { .telegram }
+    private let reseau: ReseauTor
 
-    public init() {}
+    public init(reseau: ReseauTor) {
+        self.reseau = reseau
+    }
 
     public func recuperer(configuration: ConfigurationConnecteur) async throws -> [ElementVeille] {
         let canal = configuration.identifiant
@@ -56,7 +62,7 @@ public struct ConnecteurTelegram: SocialFeedProvider {
               let url = URL(string: "https://t.me/s/\(canal)") else {
             throw ErreurVeille.urlInvalide
         }
-        let (donnees, _) = try await URLSession.shared.data(from: url)
+        let donnees = try await reseau.telecharger(url)
         guard let html = String(data: donnees, encoding: .utf8) else {
             throw ErreurVeille.fluxIllisible
         }
@@ -131,11 +137,12 @@ public struct ConnecteurTelegram: SocialFeedProvider {
 /// SocialFeedProvider et s'enregistre ici.
 public enum RegistreConnecteurs {
 
-    /// Connecteurs disponibles, par plateforme.
-    public static func fournisseur(pour plateforme: PlateformeSociale) -> (any SocialFeedProvider)? {
+    /// Connecteurs disponibles, par plateforme. Tous passent par Tor :
+    /// le réseau est injecté à la création.
+    public static func fournisseur(pour plateforme: PlateformeSociale, reseau: ReseauTor) -> (any SocialFeedProvider)? {
         switch plateforme {
-        case .xTwitter: return ConnecteurX()
-        case .telegram: return ConnecteurTelegram()
+        case .xTwitter: return ConnecteurX(reseau: reseau)
+        case .telegram: return ConnecteurTelegram(reseau: reseau)
         // Discord exige un token bot (Keychain) et TikTok un import manuel :
         // instanciés explicitement par l'appelant, pas par le registre générique.
         case .discord, .tiktok: return nil
@@ -159,10 +166,12 @@ public struct ConnecteurDiscord: SocialFeedProvider {
     public var tokenBot: String
     /// Identifiant du canal à surveiller.
     public var idCanal: String
+    private let reseau: ReseauTor
 
-    public init(tokenBot: String, idCanal: String) {
+    public init(tokenBot: String, idCanal: String, reseau: ReseauTor) {
         self.tokenBot = tokenBot
         self.idCanal = idCanal
+        self.reseau = reseau
     }
 
     public func recuperer(configuration: ConfigurationConnecteur) async throws -> [ElementVeille] {
@@ -174,7 +183,7 @@ public struct ConnecteurDiscord: SocialFeedProvider {
         }
         var requete = URLRequest(url: url)
         requete.setValue("Bot \(tokenBot)", forHTTPHeaderField: "Authorization")
-        let (donnees, _) = try await URLSession.shared.data(for: requete)
+        let donnees = try await reseau.envoyer(requete)
         return try Self.decoderMessages(donnees: donnees, idCanal: canal)
     }
 

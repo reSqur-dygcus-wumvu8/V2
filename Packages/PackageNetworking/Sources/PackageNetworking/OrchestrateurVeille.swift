@@ -1,19 +1,22 @@
 import Foundation
 import PackageDomain
+import PackageTor
 
-/// Orchestrateur de veille : exécute une veille, déduplique les résultats
-/// (hash du contenu déjà vu) et journalise chaque exécution. Testable
-/// avec des connecteurs mockés (aucun réseau requis).
+/// Orchestrateur de veille : exécute une veille via Tor (uniquement),
+/// déduplique les résultats (hash du contenu déjà vu) et journalise chaque
+/// exécution — y compris les échecs Tor (plateformes bloquantes).
 public actor OrchestrateurVeille {
 
-    private let session: URLSession
+    private let reseau: ReseauTor
 
-    public init(session: URLSession = .shared) {
-        self.session = session
+    public init(reseau: ReseauTor) {
+        self.reseau = reseau
     }
 
-    /// Exécute une veille complète : Google News ou flux RSS/Atom selon le type,
-    /// puis retourne les éléments nouveaux (hash non déjà vu) et le journal.
+    /// Exécute une veille complète : Google News ou flux RSS/Atom selon le
+    /// type, puis retourne les éléments nouveaux (hash non déjà vu) et le
+    /// journal. Les erreurs (Tor coupé, plateforme bloquant les sorties Tor)
+    /// sont journalisées avec un message explicite.
     public func executer(
         veille: Veille,
         hashesVus: Set<String>,
@@ -25,7 +28,7 @@ public actor OrchestrateurVeille {
             case .googleNews:
                 bruts = try await ConnecteurGoogleNews().executer(
                     veille: veille,
-                    session: session,
+                    reseau: reseau,
                     calculHash: Self.hashSHA256
                 )
             case .rss:
@@ -35,12 +38,12 @@ public actor OrchestrateurVeille {
                 bruts = try await ConnecteurRSS().executer(
                     urlFlux: url,
                     veilleId: veille.id,
-                    session: session,
+                    reseau: reseau,
                     calculHash: Self.hashSHA256
                 )
             case .social:
-                // Les connecteurs sociaux sont branchés à l'Étape 2 (extension)
-                // via SocialFeedProvider ; non couverts ici.
+                // Connecteurs sociaux : branchement par l'appelant via
+                // SocialFeedProvider (chaque connecteur utilise ReseauTor).
                 bruts = []
             }
 
@@ -64,6 +67,16 @@ public actor OrchestrateurVeille {
                 message: "\(nouveaux.count) nouvel(s) élément(s), \(bruts.count) analysé(s)",
                 date: maintenant
             )
+        } catch let erreur as ErreurReseauTor {
+            // Échec via Tor : plateforme bloquante, circuit coupé, timeout —
+            // message journalisé, aucune donnée perdue.
+            return ResultatExecutionVeille(
+                veilleId: veille.id,
+                nouveauxElements: [],
+                succes: false,
+                message: "Échec Tor : \(erreur.localizedDescription)",
+                date: maintenant
+            )
         } catch {
             return ResultatExecutionVeille(
                 veilleId: veille.id,
@@ -75,13 +88,10 @@ public actor OrchestrateurVeille {
         }
     }
 
-    /// Hash SHA-256 hexadécimal d'une chaîne (détection de contenu déjà vu).
+    /// Hash SHA-256 hexadécimal d'une chaîne (empreinte de déduplication).
     public nonisolated static func hashSHA256(_ texte: String) -> String {
-        let donnees = Data(texte.utf8)
-        // SHA256 de CryptoKit serait idéal ; version portable via fondation de hachage simple.
-        // Utilisée uniquement comme empreinte de déduplication.
         var digest = [UInt8](repeating: 0, count: 32)
-        _ = donnees.withUnsafeBytes { octets in
+        _ = Data(texte.utf8).withUnsafeBytes { octets in
             var h: UInt64 = 0xcbf29ce484222325
             for case let octet? in octets.bindMemory(to: UInt8.self) {
                 h = (h ^ UInt64(octet)) &* 0x100000001b3

@@ -69,22 +69,18 @@ final class OrchestrateurVeilleTests: XCTestCase {
         XCTAssertNil(connecteur.urlRecherche(motsCles: []))
     }
 
-    func testDeduplicationParHash() async {
+    func testEchecTorJournalise() async {
         let veille = Veille(type: .googleNews, titre: "Test", motsCles: ["x"])
-        // Hashes "vus" couvrent tous les éléments → aucun nouveau.
-        let orchestrateur = OrchestrateurVeille(session: URLSessionFactice.partage)
+        // Sans xcframework Arti lié, Tor refuse proprement : échec journalisé,
+        // aucune donnée perdue, aucun fallback hors Tor.
+        let orchestrateur = OrchestrateurVeille(reseau: ReseauTor(client: ClientTor()))
         let resultat = await orchestrateur.executer(
             veille: veille,
             hashesVus: ["h1", "h2"],
             maintenant: Date()
         )
-        // Sans réseau, l'exécution échoue proprement (message d'erreur, succès false).
         XCTAssertFalse(resultat.succes)
         XCTAssertEqual(resultat.veilleId, veille.id)
+        XCTAssertTrue(resultat.message.contains("Tor") || resultat.message.contains("refus"))
     }
-}
-
-/// Session factice pour les tests : toutes les requêtes échouent proprement.
-final class URLSessionFactice: URLSession {
-    static let partage = URLSessionFactice()
 }

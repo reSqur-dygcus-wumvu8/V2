@@ -69,19 +69,15 @@ public final class ModeleParametres: ObservableObject {
     @Published public var demanderPanicWipe = false
     @Published public var message: String?
 
-    private let cheminBase: String
-    private let dossierBinaires: String
+    private let dossierMLA: URL
     private let keychain: KeychainStore
     private let reglages = UserDefaults.standard
 
     public init(
-        cheminBase: String,
-        dossierBinaires: String,
+        dossierMLA: URL,
         keychain: KeychainStore = KeychainStore()
     ) {
-        self.cheminBase = cheminBase
-        self.dossierBinaires = dossierBinaires
-        self.keychain = keychain
+        self.dossierMLA = dossierMLA
         seuilTexte = reglages.object(forKey: "seuilTexte") as? Double ?? 0.8
         seuilDenomination = reglages.object(forKey: "seuilDenomination") as? Double ?? 0.85
         frequenceDefaut = reglages.object(forKey: "frequenceDefaut") as? Int ?? 60
@@ -94,34 +90,32 @@ public final class ModeleParametres: ObservableObject {
         reglages.set(valeur, forKey: cle)
     }
 
-    /// Export chiffré : copie la base dans un fichier de sauvegarde.
+    /// Export chiffré : copie les segments MLA dans un dossier de sauvegarde.
     public func exporter() {
         let gestionnaire = FileManager.default
         do {
             let dossierExport = gestionnaire.urls(for: .documentDirectory, in: .userDomainMask).first
                 ?? gestionnaire.temporaryDirectory
             let destination = dossierExport
-                .appendingPathComponent("sauvegarde-\(Int(Date().timeIntervalSince1970)).sqlite")
-            if gestionnaire.fileExists(atPath: cheminBase) {
-                try gestionnaire.copyItem(atPath: cheminBase, toPath: destination.path)
+                .appendingPathComponent("sauvegarde-\(Int(Date().timeIntervalSince1970))", isDirectory: true)
+            if gestionnaire.fileExists(atPath: dossierMLA.path) {
+                try gestionnaire.copyItem(at: dossierMLA, to: destination)
                 message = "Sauvegarde chiffrée créée : \(destination.lastPathComponent)"
             } else {
-                message = "Aucune base à exporter."
+                message = "Aucune donnée à exporter."
             }
         } catch {
             message = "Erreur d'export : \(error.localizedDescription)"
         }
     }
 
-    /// Panic wipe : efface base, binaires et entrées trousseau du service.
+    /// Panic wipe : destruction des segments d'archive MLA et du trousseau
+    /// de service (le secret maître est révoqué côté Gestionnaire d'accès).
     public func panicWipe() {
         do {
-            try BaseDonneesService.panicWipe(
-                cheminBase: cheminBase,
-                dossierBinaires: dossierBinaires,
-                keychain: keychain
-            )
-            message = "Toutes les données ont été effacées."
+            try FileManager.default.removeItem(at: dossierMLA)
+            try keychain.toutSupprimer()
+            message = "Toutes les données ont été effacées (archives MLA détruites)."
         } catch {
             message = "Erreur d'effacement : \(error.localizedDescription)"
         }

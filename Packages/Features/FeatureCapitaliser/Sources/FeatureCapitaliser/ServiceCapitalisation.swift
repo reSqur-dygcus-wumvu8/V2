@@ -40,9 +40,9 @@ public struct ServiceCapitalisation: Sendable {
             let contenuConcatene = elements.map { "\($0.titre) — \($0.contenu)" }.joined(separator: "\n\n")
             regroupement.resume = (try? await client.resumer(contenu: contenuConcatene)) ?? regroupement.resume
         }
-        try entrepotRegroupement.enregistrer(regroupement)
+        entrepotRegroupement.enregistrer(regroupement)
         for element in elements {
-            try entrepotElements.marquerTraite(element.id, statut: .capitalise)
+            entrepotElements.marquerTraite(element.id, statut: .capitalise)
         }
         return regroupement
     }
@@ -64,7 +64,7 @@ public struct ServiceCapitalisation: Sendable {
     /// apparaît dans le texte (similarité de dénomination), retourne les couples
     /// (entité existante, occurrence trouvée) pour validation.
     public func reconnaitreEntites(dans texte: String) throws -> [(Entite, String)] {
-        let entites = try entrepotEntite.toutes()
+        let entites = entrepotEntite.toutes()
         var reconnues: [(Entite, String)] = []
         for entite in entites {
             let candidats = [entite.denomination, entite.prenom, entite.nom]
@@ -100,7 +100,7 @@ public struct ServiceCapitalisation: Sendable {
         default:
             entite = Entite(type: type, denomination: terme)
         }
-        try entrepotEntite.enregistrer(entite)
+        entrepotEntite.enregistrer(entite)
         return entite
     }
 

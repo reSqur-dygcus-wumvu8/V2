@@ -129,7 +129,7 @@ public final class ModeleImport: ObservableObject {
                 cotation: CotationOTAN(fiabiliteSource: cotationSource, credibiliteInfo: .nePeutEtreJugee),
                 sourceId: source.id
             )
-            let insere = try entrepotDocument.inserer(document)
+            let insere = entrepotDocument.inserer(document)
             message = insere ? "Document importé." : "Doublon : fichier déjà importé (hash identique)."
         } catch {
             message = "Erreur d'import : \(error.localizedDescription)"
@@ -138,11 +138,11 @@ public final class ModeleImport: ObservableObject {
 
     private func obtenirOuCreerSource() throws -> SourceInfo {
         let denomination = sourceDenomination.trimmingCharacters(in: .whitespaces)
-        if let existante = try entrepotSource.chercher(denomination: denomination) {
+        if let existante = entrepotSource.chercher(denomination: denomination) {
             return existante
         }
         let nouvelle = SourceInfo(denomination: denomination, cotation: cotationSource)
-        try entrepotSource.enregistrer(nouvelle)
+        entrepotSource.enregistrer(nouvelle)
         return nouvelle
     }
 }

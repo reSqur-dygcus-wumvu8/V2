@@ -182,7 +182,7 @@ public final class ModeleFusion: ObservableObject {
                 champsDepuisFusionnee: champs
             )
             if let proposition = proposition {
-                try entrepotDoublon.decider(proposition.id, statut: .valide)
+                entrepotDoublon.decider(proposition.id, statut: .valide)
             }
             message = "Fusion effectuée : « \(effectiveGardee.denomination) » conservée."
         } catch {

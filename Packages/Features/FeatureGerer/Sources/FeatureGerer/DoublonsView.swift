@@ -103,7 +103,7 @@ public final class ModeleDoublons: ObservableObject {
         let champsDepuisB: Set<String> = ["resume", "biographie", "commentaires"]
         do {
             try service.fusionnerEntites(gardee: a, fusionnee: b, champsDepuisFusionnee: champsDepuisB)
-            try entrepotDoublon.decider(proposition.id, statut: .valide)
+            entrepotDoublon.decider(proposition.id, statut: .valide)
         } catch {
             return
         }
