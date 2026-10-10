@@ -94,13 +94,22 @@ public actor CoffreCles {
         self.kek = kek
     }
 
-    /// Initialise le coffret avec une DEK (première utilisation) :
-    /// génère la DEK, l'enveloppe avec la KEK et retourne la DEK en clair
-    /// pour que l'application principale chiffre sa base.
-    public func initialiser() -> SymmetricKey {
-        let dek = ModeleCles.genererDEK()
-        enveloppeDEK = try? ModeleCles.envelopper(dek: dek, kek: kek)
-        return dek
+    /// Initialise le coffret avec le secret maître MLA (première
+    /// utilisation) : génère une phrase secrète (256 bits aléatoires,
+    /// encodée base64), l'enveloppe avec la KEK et la retourne en clair
+    /// pour que l'application principale chiffre ses archives MLA.
+    public func initialiserSecretMLA() -> String {
+        let secret = ModeleCles.genererDEK()
+        let phrase = secret.withUnsafeBytes { Data($0).base64EncodedString() }
+        enveloppeDEK = try? ModeleCles.envelopper(dek: secret, kek: kek)
+        return phrase
+    }
+
+    /// Déballe le secret maître MLA avec la clé de session (application
+    /// principale, à l'ouverture des archives).
+    public func deballerSecretMLA(session: CleSession, maintenant: Date = Date()) throws -> String {
+        let secret = try deballerDEK(session: session, maintenant: maintenant)
+        return secret.withUnsafeBytes { Data($0).base64EncodedString() }
     }
 
     /// Enregistre une enveloppe DEK existante (restauration).
@@ -170,24 +179,26 @@ public actor CoffreCles {
         consigner(appareil: "local", action: "rotation KEK", succes: true)
     }
 
-    /// Rotation de la DEK : nouvelle DEK générée et ré-enveloppée ; la base
-    /// doit être ré-encryptée par l'app appelante avec la nouvelle DEK.
-    public func rotationDEK() throws -> SymmetricKey {
+    /// Rotation du secret maître MLA : nouveau secret généré et
+    /// ré-enveloppé ; les archives doivent être ré-encryptées par l'app
+    /// appelante (opération coûteuse, signalée comme telle dans l'UI).
+    public func rotationSecretMLA() throws -> String {
         guard enveloppeDEK != nil else {
             throw ErreurCoffre.pasDeDEK
         }
-        let dek = ModeleCles.genererDEK()
-        enveloppeDEK = try ModeleCles.envelopper(dek: dek, kek: kek)
-        consigner(appareil: "local", action: "rotation DEK", succes: true)
-        return dek
+        let secret = ModeleCles.genererDEK()
+        enveloppeDEK = try ModeleCles.envelopper(dek: secret, kek: kek)
+        consigner(appareil: "local", action: "rotation secret MLA", succes: true)
+        return secret.withUnsafeBytes { Data($0).base64EncodedString() }
     }
 
     /// Révocation / panic wipe : la KEK est écrasée, l'enveloppe détruite.
-    /// La base devient définitivement illisible sur tous les appareils.
+    /// Les archives MLA deviennent définitivement illisibles sur tous les
+    /// appareils (aucune copie du secret maître n'existe ailleurs).
     public func panique() {
         kek = SymmetricKey(size: ModeleCles.tailleCle)
         enveloppeDEK = nil
-        consigner(appareil: "local", action: "PANIC WIPE — KEK révoquée", succes: true)
+        consigner(appareil: "local", action: "PANIC WIPE — secret maître MLA révoqué", succes: true)
     }
 
     /// Génère la phrase de récupération (une seule fois) et conserve la

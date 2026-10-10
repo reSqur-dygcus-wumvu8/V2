@@ -49,17 +49,18 @@ final class ModeleClesTests: XCTestCase {
 /// Tests du coffret de clés : sessions, politiques, rotations, panic wipe, audit.
 final class CoffreClesTests: XCTestCase {
 
-    func testInitialisationEtEnveloppe() async {
+    func testInitialisationSecretMLA() async {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        let dek = await coffret.initialiser()
+        let phrase = await coffret.initialiserSecretMLA()
         let enveloppe = await coffret.enveloppe()
         XCTAssertNotNil(enveloppe)
-        XCTAssertEqual(dek.bitCount, 256)
+        // Phrase secrète base64 d'une clé 256 bits (44 caractères).
+        XCTAssertEqual(phrase.count, 44)
     }
 
     func testDelivranceSessionAppareilAutorise() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        _ = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         await coffret.autoriser(AppareilAutorise(nom: "Mac principal", profil: .complet))
 
         let session = await coffret.delivrerSession(appareil: "Mac principal", duree: 600)
@@ -73,7 +74,7 @@ final class CoffreClesTests: XCTestCase {
 
     func testRefusAppareilInconnuOuRevogue() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        _ = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         await coffret.autoriser(AppareilAutorise(nom: "iPhone", profil: .lectureSeule))
 
         // Inconnu.
@@ -91,7 +92,7 @@ final class CoffreClesTests: XCTestCase {
 
     func testPlageHoraire() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        _ = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         // Plage 9h–18h uniquement.
         await coffret.autoriser(
             AppareilAutorise(nom: "Bureau", profil: .complet, plageHoraireDebut: 9, plageHoraireFin: 18)
@@ -106,7 +107,7 @@ final class CoffreClesTests: XCTestCase {
 
     func testSessionExpireeRefuseeAuDeballage() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        _ = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         await coffret.autoriser(AppareilAutorise(nom: "Mac", profil: .complet))
         let session = await coffret.delivrerSession(appareil: "Mac", duree: 600)
         let expiree = CleSession(cle: session!.cle, expiration: Date().addingTimeInterval(-1))
@@ -120,7 +121,7 @@ final class CoffreClesTests: XCTestCase {
 
     func testRotationKEKInvalideAncienne() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        _ = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         await coffret.autoriser(AppareilAutorise(nom: "Mac", profil: .complet))
         let sessionAvant = await coffret.delivrerSession(appareil: "Mac", duree: 600)
 
@@ -131,19 +132,17 @@ final class CoffreClesTests: XCTestCase {
         XCTAssertThrowsError(try ModeleCles.deballer(enveloppe: enveloppe!, kek: sessionAvant!.cle))
     }
 
-    func testRotationDEKRetourneNouvelleCle() async throws {
+    func testRotationSecretMLARetourneNouvellePhrase() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        let dek1 = await coffret.initialiser()
-        let dek2 = try await coffret.rotationDEK()
-        XCTAssertNotEqual(
-            dek1.withUnsafeBytes { Data($0) },
-            dek2.withUnsafeBytes { Data($0) }
-        )
+        let phrase1 = await coffret.initialiserSecretMLA()
+        let phrase2 = try await coffret.rotationSecretMLA()
+        XCTAssertNotEqual(phrase1, phrase2)
+        XCTAssertEqual(phrase2.count, 44)
     }
 
-    func testPanicWipeRendBaseIllisible() async throws {
+    func testPanicWipeRendArchivesIllisibles() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        let dek = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         let enveloppeAvant = await coffret.enveloppe()
         await coffret.autoriser(AppareilAutorise(nom: "Mac", profil: .complet))
         _ = await coffret.delivrerSession(appareil: "Mac", duree: 600)
@@ -160,7 +159,7 @@ final class CoffreClesTests: XCTestCase {
 
     func testExportAuditJSON() async throws {
         let coffret = CoffreCles(kek: SymmetricKey(size: .bits256))
-        _ = await coffret.initialiser()
+        _ = await coffret.initialiserSecretMLA()
         await coffret.autoriser(AppareilAutorise(nom: "Mac", profil: .complet))
         _ = await coffret.delivrerSession(appareil: "Mac")
         let donnees = try XCTUnwrap(await coffret.exporterAudit())

@@ -137,8 +137,8 @@ struct AccueilGestionnaireView: View {
                             await etat.recharger()
                         }
                     }
-                    Button("Rotation de la DEK") {
-                        Task { _ = try? await etat.coffret.rotationDEK() }
+                    Button("Rotation du secret maître MLA (re-chiffrement des archives)") {
+                        Task { _ = try? await etat.coffret.rotationSecretMLA() }
                     }
                     Button("Phrase de récupération (affichée une seule fois)") {
                         Task { await etat.genererPhrase() }

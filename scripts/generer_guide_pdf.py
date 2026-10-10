@@ -98,9 +98,11 @@ def contenu():
         [
             ["Plateformes", "macOS 14+, iPadOS 17+, iOS 17+"],
             ["Architecture", "Monorepo Swift Package Manager, SwiftUI, MVVM"],
-            ["Base de données", "GRDB + SQLCipher (chiffrée au repos)"],
+            ["Données au repos", "Archives chiffrées MLA (ANSSI) — chiffrement, compression, signatures"],
             ["Cotations", "OTAN / Admiralty Code : source A–F, information 1–6"],
             ["IA", "API Mistral via serveur proxy (clé jamais dans le client)"],
+            ["Réseau", "Tout le trafic sortant via Tor (client Arti embarqué, proxy SOCKS5 local)"],
+            ["Synchronisation", "Dépôt GitHub privé via Tor — deltas CRDT chiffrés (désactivable)"],
             ["Cartographie", "MapLibre — OSM, IGN (Etalab 2.0), EOX (CC BY 4.0)"],
             ["Application compagnon", "Gestionnaire d'accès : KEK/DEK, Secure Enclave, hors ligne"],
         ],
@@ -193,8 +195,8 @@ def contenu():
     P("Au premier lancement, le Gestionnaire d'accès :", "corps")
     puce("génère la <b>KEK</b> (clé maîtresse) dans le <b>Secure Enclave</b> — "
          "non extractible, liée au matériel (repli KEK logicielle sur simulateur) ;")
-    puce("génère la <b>DEK</b> (clé des données) qui chiffre la base SQLCipher, "
-         "et l'enveloppe avec la KEK ;")
+    puce("génère le <b>secret maître MLA</b> (256 bits, base64) qui chiffre "
+         "les archives, et l'enveloppe avec la KEK ;")
     puce("propose d'autoriser cet appareil.")
     P("Générez immédiatement la <b>phrase de récupération</b> (menu Actions) : "
       "12 mots affichés <b>une seule fois</b>. Notez-les sur papier et conservez-les "
@@ -209,8 +211,10 @@ def contenu():
     puce("Vous vous authentifiez (Face ID / Touch ID ou code) ;")
     puce("Une <b>clé de session à durée limitée</b> (1 h par défaut, réglable "
          "de 5 min à 24 h) est publiée dans le groupe de trousseau partagé ;")
-    puce("L'OSINT Suite déballe la DEK et ouvre la base chiffrée ;")
-    puce("Au passage en arrière-plan, la session est purgée et la base refermée.")
+    puce("L'OSINT Suite déchiffre les archives MLA <b>en mémoire</b> "
+         "(jeu de travail et index reconstruits) ;")
+    puce("Au passage en arrière-plan : purge de la session et <b>consolidation</b> "
+         "des archives MLA avant fermeture.")
     f.append(bloc_note("La KEK ne quitte jamais le Gestionnaire d'accès : une "
                        "application principale compromise ne peut pas ouvrir la base "
                        "sans validation humaine côté compagnon."))
@@ -259,6 +263,24 @@ def contenu():
       "ensuite). Utilisez « Précharger la zone » dans la vue Carte pour "
       "télécharger à l'avance les tuiles d'une zone et la consulter hors "
       "connexion.", "corps")
+
+    P("3.6 Tor — trafic sortant obligatoire", "h2")
+    P("Le client <b>Arti</b> (implémentation officielle Tor) est embarqué dans "
+      "l'application et expose un proxy SOCKS5 sur 127.0.0.1 :", "corps")
+    puce("<b>Tout</b> le trafic sortant (veilles, tuiles, proxy Mistral, GitHub, "
+         "Wikipedia) transite par Tor — aucune exception ;")
+    puce("Résolution DNS via Tor : pas de fuite DNS ;")
+    puce("Si une plateforme bloque les sorties Tor : échec <b>journalisé</b> dans "
+         "le journal d'exécution, aucune donnée perdue ;")
+    puce("Ponts obfs4 configurables dans Paramètres (section Tor) ;")
+    puce("Conséquences assumées : latence accrue (cache local systématique), "
+         "APNs refusés par défaut (tirage périodique + notifications locales), "
+         "CloudKit exclu (synchronisation via GitHub/Tor).")
+    P("Compilation des xcframeworks Rust (MLA + Arti) :", "h2")
+    code("rustup target add aarch64-apple-darwin x86_64-apple-darwin \\\n"
+         "                     aarch64-apple-ios aarch64-apple-ios-sim\n"
+         "./scripts/build-xcframeworks.sh\n"
+         "# puis lier Frameworks/mla.xcframework et Frameworks/tor.xcframework dans Xcode")
 
     # ============================ 4. UTILISATION
     f.append(NextPageTemplate("suite"))
@@ -361,9 +383,10 @@ def contenu():
     puce("Seuils de similarité doublons (texte, dénominations) ;")
     puce("Fréquence de veille par défaut ; actions automatiques Mistral "
          "activables/désactivables ;")
-    puce("Synchronisation CloudKit activable (l'app fonctionne sans iCloud) — "
-         "fusion CRDT Automerge pour les textes, jamais « dernier écrit "
-         "gagnant » ;")
+    puce("Synchronisation via dépôt GitHub privé (via Tor) activable — deltas "
+         "CRDT Automerge chiffrés, jamais « dernier écrit gagnant » ;")
+    puce("Rôle de l'appareil : <b>collecte</b> (Mac hub, veilles périodiques) ou "
+         "<b>consomme uniquement</b> (iPhone/iPad, rafraîchissement à l'ouverture) ;")
     puce("Export de la base (sauvegarde chiffrée) ; <b>effacement complet</b> "
          "(panic wipe) avec confirmation.")
     f.append(bloc_note("Le panic wipe est également disponible côté Gestionnaire "
@@ -401,8 +424,10 @@ def contenu():
         [
             ["« Session absente ou expirée »", "Session purgée (arrière-plan) ou expirée",
              "Redemander le déverrouillage via le Gestionnaire d'accès"],
-            ["« DEK non initialisée »", "Premier lancement sans passage par le compagnon",
-             "Ouvrir d'abord le Gestionnaire d'accès (il initialise KEK/DEK)"],
+            ["« Secret MLA non initialisé »", "Premier lancement sans passage par le compagnon",
+             "Ouvrir d'abord le Gestionnaire d'accès (il initialise KEK/secret MLA)"],
+            ["« Échec via Tor » en boucle", "Plateforme bloquante ou circuit coupé",
+             "Vérifier les ponts obfs4 (Paramètres > Tor) ; consulter le journal d'exécution"],
             ["Base illisible après changement d'appareil", "Secure Enclave lié à l'ancien matériel",
              "Restaurer depuis la phrase de récupération (12 mots)"],
             ["« Cette plateforme n'expose pas d'API publique »", "TikTok sans API",

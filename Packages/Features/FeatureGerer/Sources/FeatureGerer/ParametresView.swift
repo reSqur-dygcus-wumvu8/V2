@@ -3,6 +3,12 @@ import PackageDomain
 import PackagePersistence
 import PackageTor
 
+/// Rôle de l'appareil dans l'architecture Mac hub.
+public enum RoleAppareil: String, Codable, Sendable {
+    case collecte
+    case consomme
+}
+
 /// Paramètres : seuils de similarité, fréquences de veille, effacement complet
 /// (panic wipe), export chiffré. Les secrets restent dans le Keychain.
 public struct ParametresView: View {
@@ -24,6 +30,14 @@ public struct ParametresView: View {
                 Stepper("Fréquence par défaut : \(modele.frequenceDefaut) min",
                         value: $modele.frequenceDefaut, in: 5...1440, step: 5)
                 Toggle("Actions automatiques Mistral", isOn: $modele.actionsMistral)
+            }
+            Section("Rôle de cet appareil (architecture Mac hub)") {
+                Picker("Comportement", selection: $modele.roleAppareil) {
+                    Text("Collecte (veilles périodiques complètes)").tag(RoleAppareil.collecte)
+                    Text("Consomme uniquement (rafraîchissement à l'ouverture)").tag(RoleAppareil.consomme)
+                }
+                Text("iOS n'autorise pas l'exécution continue en arrière-plan : le Mac est le collecteur principal (LaunchAgent) ; l'iPhone/iPad rafraîchit à l'ouverture et reçoit les résultats synchronisés.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Tor — trafic sortant") {
                 Stepper("Port SOCKS5 : \(modele.portSOCKS5)", value: $modele.portSOCKS5, in: 9050...9150, step: 1)
@@ -99,6 +113,11 @@ public final class ModeleParametres: ObservableObject {
         syncActive = reglages.object(forKey: "syncActive") as? Bool ?? false
         portSOCKS5 = reglages.object(forKey: "portSOCKS5") as? Int ?? 9050
         ponts = reglages.string(forKey: "ponts") ?? ""
+        roleAppareil = RoleAppareil(rawValue: reglages.string(forKey: "roleAppareil") ?? "") ?? .collecte
+    }
+
+    @Published public var roleAppareil: RoleAppareil = .collecte {
+        didSet { sauvegarder("roleAppareil", roleAppareil.rawValue) }
     }
 
     /// Configuration Tor courante (ponts parsés ligne par ligne).
