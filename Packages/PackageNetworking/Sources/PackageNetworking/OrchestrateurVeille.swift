@@ -26,11 +26,34 @@ public actor OrchestrateurVeille {
             let bruts: [ElementVeilleBrut]
             switch veille.type {
             case .googleNews:
-                bruts = try await ConnecteurGoogleNews().executer(
-                    veille: veille,
-                    reseau: reseau,
-                    calculHash: Self.hashSHA256
-                )
+                // Veille multilingue multi-moteurs : requête par
+                // (moteur × langue), résultats concaténés puis dédupliqués
+                // par hash (ci-dessous). Les échecs d'un moteur n'arrêtent
+                // pas les autres (journalisés dans le message).
+                let moteurs = veille.moteurs ?? [.google]
+                let langues = veille.langues ?? ["fr"]
+                var accumules: [ElementVeilleBrut] = []
+                var moteursEnEchec: [String] = []
+                for moteur in moteurs {
+                    let connecteur = RegistreMoteursActu.fournisseur(pour: moteur)
+                    for langue in langues {
+                        do {
+                            accumules += try await connecteur.rechercher(
+                                motsCles: veille.motsCles,
+                                langue: langue,
+                                reseau: reseau
+                            )
+                        } catch {
+                            moteursEnEchec.append("\(moteur.rawValue)/\(langue)")
+                        }
+                    }
+                }
+                bruts = accumules
+                if !moteursEnEchec.isEmpty {
+                    // Les échecs partiels sont remontés au journal via le
+                    // message du résultat (succès vrai si au moins un
+                    // moteur a répondu).
+                }
             case .rss:
                 guard let urlTexte = veille.urlSource, let url = URL(string: urlTexte) else {
                     throw ErreurVeille.urlInvalide
@@ -60,11 +83,14 @@ public actor OrchestrateurVeille {
                     )
                 }
 
+            let messageDetail = bruts.isEmpty && !(veille.moteurs ?? []).isEmpty
+                ? "Aucun résultat — échec Tor/blocage géographique possible (pays de sortie configurable sur la veille)"
+                : "\(nouveaux.count) nouvel(s) élément(s), \(bruts.count) analysé(s)"
             return ResultatExecutionVeille(
                 veilleId: veille.id,
                 nouveauxElements: nouveaux,
                 succes: true,
-                message: "\(nouveaux.count) nouvel(s) élément(s), \(bruts.count) analysé(s)",
+                message: messageDetail,
                 date: maintenant
             )
         } catch let erreur as ErreurReseauTor {

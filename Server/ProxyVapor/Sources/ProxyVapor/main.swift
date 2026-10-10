@@ -46,6 +46,18 @@ struct ProxyMistral {
             return try await appelerMistral(req, cle: cleMistral, endpoint: "embeddings")
         }
 
+        // POST /traduire — traduction vers le français (veille multilingue).
+        app.post("traduire") { req -> String in
+            try verifierToken(req, attendu: tokenClient)
+            guard let corps = try? req.content.decode([String: String].self),
+                  let texte = corps["texte"] else {
+                throw Abort(.badRequest)
+            }
+            let langueSource = corps["langue_source"] ?? "auto"
+            let prompt = "Traduis en français le texte suivant, réponds uniquement par la traduction. Texte : \(texte)"
+            return try await appelerMistralChat(req, cle: cleMistral, prompt: prompt)
+        }
+
         defer { app.shutdown() }
         try await app.execute()
     }
@@ -55,6 +67,22 @@ struct ProxyMistral {
         guard req.headers.first(name: "Authorization") == "Bearer \(attendu)" else {
             throw Abort(.unauthorized)
         }
+    }
+
+    /// Relais chat avec prompt direct (traduction).
+    private static func appelerMistralChat(_ req: Request, cle: String, prompt: String) async throws -> String {
+        let corps: [String: Any] = [
+            "model": "mistral-small-latest",
+            "messages": [["role": "user", "content": prompt]]
+        ]
+        let donnees = try JSONSerialization.data(withJSONObject: corps)
+        var enTetes = HTTPHeaders()
+        enTetes.replaceOrAdd(name: .authorization, value: "Bearer \(cle)")
+        enTetes.replaceOrAdd(name: .contentType, value: "application/json")
+        let reponse = try await req.client.post("https://api.mistral.ai/v1/chat/completions", headers: enTetes) { requeteSortante in
+            requeteSortante.body = ByteBuffer(data: donnees)
+        }
+        return String(buffer: reponse.body ?? ByteBuffer())
     }
 
     /// Relais générique vers l'API Mistral (clé ajoutée côté serveur).

@@ -1,0 +1,15 @@
+# FFI Rust vers tor C (libtor) — utilisée pour la restriction du pays de
+# sortie (ExitNodes {cc}), non supportée de façon mature par Arti.
+# Compilation : scripts/build-xcframeworks.sh (cible torc.xcframework).
+[package]
+name = "torc-ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "torcffi"
+crate-type = ["staticlib"]
+
+[dependencies]
+# libtor : embarque le daemon tor C avec configuration programmatique.
+libtor = "46"

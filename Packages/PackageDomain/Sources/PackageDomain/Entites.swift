@@ -184,17 +184,41 @@ public enum TypeVeille: String, CaseIterable, Codable, Sendable {
     case social
 }
 
-/// Configuration d'une veille (mots-clés, source, fréquence, notifications).
+/// Moteur d'actualités interrogeable par une veille (tous via Tor).
+public enum MoteurActu: String, CaseIterable, Codable, Sendable {
+    case google
+    case qwant
+    case yandex
+
+    public var libelle: String {
+        switch self {
+        case .google: return "Google Actualités"
+        case .qwant: return "Qwant Actualités"
+        case .yandex: return "Yandex Actualités"
+        }
+    }
+}
+
+/// Configuration d'une veille (mots-clés, langues, moteurs, source,
+/// fréquence, pays de sortie Tor éventuel, notifications).
 public struct Veille: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
     public var type: TypeVeille
     public var titre: String
     public var motsCles: [String]
+    /// Langues de recherche (codes ISO, ex. ["fr", "en"]) — les résultats
+    /// sont présentés en français (traduction Mistral).
+    public var langues: [String]?
+    /// Moteurs d'actualités à interroger (vide = Google seul).
+    public var moteurs: [MoteurActu]?
     public var urlSource: String?
     public var plateforme: String?
     public var frequenceMinutes: Int
     public var active: Bool
     public var motsClesPriorite: [String]
+    /// Pays de sortie Tor privilégié (code ISO, ex. "fr") pour contourner
+    /// les blocages géographiques. RÉDUIT L'ANONYMAT — désactivé par défaut.
+    public var paysSortie: String?
     public var derniereExecution: Date?
 
     public init(
@@ -202,11 +226,14 @@ public struct Veille: Codable, Sendable, Equatable, Identifiable {
         type: TypeVeille,
         titre: String,
         motsCles: [String] = [],
+        langues: [String]? = nil,
+        moteurs: [MoteurActu]? = nil,
         urlSource: String? = nil,
         plateforme: String? = nil,
         frequenceMinutes: Int = 60,
         active: Bool = true,
         motsClesPriorite: [String] = [],
+        paysSortie: String? = nil,
         derniereExecution: Date? = nil
     ) {
         self.id = id
@@ -218,7 +245,10 @@ public struct Veille: Codable, Sendable, Equatable, Identifiable {
         self.frequenceMinutes = frequenceMinutes
         self.active = active
         self.motsClesPriorite = motsClesPriorite
+        self.paysSortie = paysSortie
         self.derniereExecution = derniereExecution
+        self.langues = langues
+        self.moteurs = moteurs
     }
 }
 
@@ -235,6 +265,10 @@ public struct ElementVeille: Codable, Sendable, Equatable, Identifiable {
     public var sourceId: UUID?
     public var cotationSource: FiabiliteSource?
     public var statut: StatutTraitement
+    /// Texte original dans sa langue d'origine (affichage français par
+    /// défaut via traduction Mistral ; l'original reste consultable).
+    public var contenuOriginal: String?
+    public var langueOriginale: String?
 
     public init(
         id: UUID = UUID(),
@@ -247,7 +281,9 @@ public struct ElementVeille: Codable, Sendable, Equatable, Identifiable {
         hashContenu: String,
         sourceId: UUID? = nil,
         cotationSource: FiabiliteSource? = nil,
-        statut: StatutTraitement = .nonTraite
+        statut: StatutTraitement = .nonTraite,
+        contenuOriginal: String? = nil,
+        langueOriginale: String? = nil
     ) {
         self.id = id
         self.veilleId = veilleId
@@ -260,6 +296,8 @@ public struct ElementVeille: Codable, Sendable, Equatable, Identifiable {
         self.sourceId = sourceId
         self.cotationSource = cotationSource
         self.statut = statut
+        self.contenuOriginal = contenuOriginal
+        self.langueOriginale = langueOriginale
     }
 }
 

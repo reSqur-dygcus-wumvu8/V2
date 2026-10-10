@@ -18,6 +18,9 @@ jobs:
       - name: Vérification crate Arti
         working-directory: Packages/PackageTor/ffi
         run: cargo check
+      - name: Vérification crate tor C
+        working-directory: Packages/PackageTor/ffi-torc
+        run: cargo check
 
   swift-tests:
     name: Tests Swift (macOS)

@@ -45,6 +45,15 @@ xcodebuild -create-xcframework \
     -library Packages/PackageTor/ffi/target/aarch64-apple-ios-sim/release/libartiffi.a \
     -output "$FRAMEWORKS/tor.xcframework"
 
+# ---------- tor C (restriction pays de sortie) ----------
+build_statique "Packages/PackageTor/ffi-torc" "torc-ffi"
+xcodebuild -create-xcframework \
+    -library Packages/PackageTor/ffi-torc/target/aarch64-apple-darwin/release/libtorcffi.a \
+    -library Packages/PackageTor/ffi-torc/target/x86_64-apple-darwin/release/libtorcffi.a \
+    -library Packages/PackageTor/ffi-torc/target/aarch64-apple-ios/release/libtorcffi.a \
+    -library Packages/PackageTor/ffi-torc/target/aarch64-apple-ios-sim/release/libtorcffi.a \
+    -output "$FRAMEWORKS/torc.xcframework"
+
 echo ""
 echo "XCFrameworks générés dans Frameworks/ :"
 ls -d "$FRAMEWORKS"/*.xcframework

@@ -40,10 +40,27 @@ public final class ClientTor: @unchecked Sendable {
     /// État courant du client.
     public var etat: EtatTor { etatInterne }
 
-    /// Démarre le client Arti (FFI Rust). Retourne false si le xcframework
-    /// n'est pas lié — l'appelant doit alors refuser toute requête sortante.
+    /// Démarre le client Tor. Choix du moteur :
+    /// - aucun pays de sortie : Arti (anonymat maximal, défaut) ;
+    /// - pays de sortie configuré : tor C (ExitNodes {cc} + StrictNodes,
+    ///   support mature de la restriction de sortie), via la FFI libtor.
+    ///
+    /// AVERTISSEMENT ANONYMAT : restreindre le pays de sortie réduit
+    /// l'anonymat (ensemble de nœuds plus petit, corrélation facilitée) ;
+    /// l'interface doit l'afficher explicitement à l'utilisateur.
     @discardableResult
     public func demarrer() async -> Bool {
+        if let pays = configuration.paysSortie, !pays.isEmpty {
+            // tor C avec restriction de sortie pays.
+            guard BackendFFI_torC.estDisponible else {
+                etatInterne = .erreur
+                return false
+            }
+            etatInterne = .demarrage
+            let code = torc_client_start(configuration.portSOCKS5, pays)
+            etatInterne = code == 0 ? .connecte : .erreur
+            return code == 0
+        }
         guard BackendFFI_Arti.estDisponible else {
             etatInterne = .erreur
             return false

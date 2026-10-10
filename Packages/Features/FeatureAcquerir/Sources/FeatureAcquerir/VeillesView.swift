@@ -87,6 +87,19 @@ struct EditionVeilleView: View {
             }
             if veille.type == .googleNews {
                 TextField("Mots-clés (séparés par des virgules)", text: motsClesBinding)
+                TextField("Langues de recherche (ex. fr, en)", text: languesBinding)
+                // Moteurs d'actualités interrogés.
+                ForEach(MoteurActu.allCases, id: \.self) { moteur in
+                    Toggle(moteur.libelle, isOn: moteurBinding(moteur))
+                }
+                TextField("Pays de sortie Tor (ex. fr — vide = anonymat maximal)", text: Binding(
+                    get: { veille.paysSortie ?? "" },
+                    set: { veille.paysSortie = $0.isEmpty ? nil : $0.lowercased() }
+                ))
+                if veille.paysSortie != nil {
+                    Text("⚠️ Restreindre le pays de sortie RÉDUIT votre anonymat (ensemble de nœuds plus petit, corrélation facilitée).")
+                        .font(.caption).foregroundStyle(.red)
+                }
             }
             if veille.type == .rss {
                 TextField("URL du flux", text: Binding(
@@ -107,6 +120,28 @@ struct EditionVeilleView: View {
         Binding(
             get: { veille.motsCles.joined(separator: ", ") },
             set: { veille.motsCles = $0.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
+        )
+    }
+
+    private var languesBinding: Binding<String> {
+        Binding(
+            get: { (veille.langues ?? ["fr"]).joined(separator: ", ") },
+            set: { veille.langues = $0.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty } }
+        )
+    }
+
+    private func moteurBinding(_ moteur: MoteurActu) -> Binding<Bool> {
+        Binding(
+            get: { veille.moteurs?.contains(moteur) ?? (moteur == .google) },
+            set: { actif in
+                var moteurs = veille.moteurs ?? [.google]
+                if actif {
+                    if !moteurs.contains(moteur) { moteurs.append(moteur) }
+                } else {
+                    moteurs.removeAll { $0 == moteur }
+                }
+                veille.moteurs = moteurs
+            }
         )
     }
 
