@@ -22,6 +22,9 @@ jobs:
       - name: Tests PackageTor
         working-directory: Packages/PackageTor
         run: swift test
+      - name: Tests PackageSync
+        working-directory: Packages/PackageSync
+        run: swift test
       - name: Tests PackagePersistence
         working-directory: Packages/PackagePersistence
         run: swift test

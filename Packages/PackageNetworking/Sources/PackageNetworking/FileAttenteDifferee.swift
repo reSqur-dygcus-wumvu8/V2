@@ -1,26 +1,33 @@
 import Foundation
 import PackageDomain
+import PackageTor
 
 /// File d'attente persistante des tâches réseau différées.
-/// En mode avion, les tâches sont mises en file et rejouées au retour
-/// de la connexion (NWPathMonitor côté app).
+/// En mode avion ou circuit Tor coupé, les tâches sont mises en file et
+/// rejouées dès que le client Tor retrouve un circuit fonctionnel.
 public actor FileAttenteDifferee {
 
     private var taches: [TacheDifferee] = []
-    private let continu: Bool
+    private var torPret = false
 
-    public init(continu: Bool = false) {
-        self.continu = continu
-    }
+    public init() {}
 
     /// Ajoute une tâche à la file.
     public func ajouter(_ tache: TacheDifferee) {
         taches.append(tache)
     }
 
-    /// Retourne et retire les tâches prêtes à être exécutées (toutes,
-    /// la décision de connexion relevant de l'appelant).
+    /// Signale l'état du circuit Tor (appelé au retour de connexion).
+    public func circuitTorDisponible(_ pret: Bool) {
+        torPret = pret
+    }
+
+    /// Tor est-il prêt à exécuter des requêtes ?
+    public var estPret: Bool { torPret }
+
+    /// Retourne et retire les tâches prêtes (uniquement si Tor est prêt).
     public func decharger() -> [TacheDifferee] {
+        guard torPret else { return [] }
         let aExecuter = taches
         taches.removeAll()
         return aExecuter

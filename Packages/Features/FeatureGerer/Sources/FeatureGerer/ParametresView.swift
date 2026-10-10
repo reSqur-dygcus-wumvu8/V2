@@ -1,6 +1,7 @@
 import SwiftUI
 import PackageDomain
 import PackagePersistence
+import PackageTor
 
 /// Paramètres : seuils de similarité, fréquences de veille, effacement complet
 /// (panic wipe), export chiffré. Les secrets restent dans le Keychain.
@@ -24,9 +25,16 @@ public struct ParametresView: View {
                         value: $modele.frequenceDefaut, in: 5...1440, step: 5)
                 Toggle("Actions automatiques Mistral", isOn: $modele.actionsMistral)
             }
-            Section("Synchronisation") {
-                Toggle("Synchronisation CloudKit", isOn: $modele.syncActive)
-                Text("L'application reste pleinement fonctionnelle sans iCloud.")
+            Section("Tor — trafic sortant") {
+                Stepper("Port SOCKS5 : \(modele.portSOCKS5)", value: $modele.portSOCKS5, in: 9050...9150, step: 1)
+                Text("Tout le trafic sortant (veilles, tuiles, Mistral, GitHub) transite par Tor. Ponts obfs4 configurables.")
+                    .font(.caption).foregroundStyle(.secondary)
+                TextField("Ponts (obfs4 ip:port certificat, un par ligne)", text: $modele.ponts, axis: .vertical)
+                    .font(.system(.caption, design: .monospaced))
+            }
+            Section("Synchronisation (dépôt GitHub via Tor)") {
+                Toggle("Synchronisation", isOn: $modele.syncActive)
+                Text("Deltas CRDT chiffrés échangés via un dépôt GitHub privé, relevés via Tor. L'application reste pleinement fonctionnelle sans synchronisation.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Données") {
@@ -66,6 +74,12 @@ public final class ModeleParametres: ObservableObject {
     @Published public var syncActive = false {
         didSet { sauvegarder("syncActive", syncActive) }
     }
+    @Published public var portSOCKS5: Int = 9050 {
+        didSet { sauvegarder("portSOCKS5", portSOCKS5) }
+    }
+    @Published public var ponts = "" {
+        didSet { sauvegarder("ponts", ponts) }
+    }
     @Published public var demanderPanicWipe = false
     @Published public var message: String?
 
@@ -83,6 +97,16 @@ public final class ModeleParametres: ObservableObject {
         frequenceDefaut = reglages.object(forKey: "frequenceDefaut") as? Int ?? 60
         actionsMistral = reglages.object(forKey: "actionsMistral") as? Bool ?? true
         syncActive = reglages.object(forKey: "syncActive") as? Bool ?? false
+        portSOCKS5 = reglages.object(forKey: "portSOCKS5") as? Int ?? 9050
+        ponts = reglages.string(forKey: "ponts") ?? ""
+    }
+
+    /// Configuration Tor courante (ponts parsés ligne par ligne).
+    public var configurationTor: ConfigurationTor {
+        ConfigurationTor(
+            portSOCKS5: UInt16(portSOCKS5),
+            ponts: ponts.components(separatedBy: .newlines).filter { !$0.isEmpty }
+        )
     }
 
     /// Écrit un réglage (les réglages ne contiennent jamais de secret).

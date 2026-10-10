@@ -39,7 +39,13 @@ open OSINTSuite.xcodeproj
    - `App/AccessManager/AccessManager.entitlements` — Keychain Sharing, App Group, **aucun réseau** ;
 3. **Bundle IDs** : `fr.osintsuite.app` / `fr.osintsuite.acces` — provisionnés
    via le compte développeur (capacités Keychain Sharing à activer sur l'App ID) ;
-4. **MapLibre** : ajouter `https://github.com/maplibre/maplibre-native-ios` aux
+4. **XCFrameworks Rust (MLA + Tor)** : compiler avec
+   `scripts/build-xcframeworks.sh` (prérequis rustup + 4 cibles Apple), puis
+   lier `Frameworks/mla.xcframework` et `Frameworks/tor.xcframework` aux cibles
+   OSINTSuite et Collecteur (General > Frameworks) — les symboles FFI
+   (carchive_*, arti_client_*) deviennent actifs et les backends provisoires
+   basculent automatiquement sur MLA/Arti réels ;
+5. **MapLibre** : ajouter `https://github.com/maplibre/maplibre-native-ios` aux
    packages du projet depuis Xcode, puis brancher `MLMapView` sur
    `ConfigMapLibre.style(...)` et le `PontTuilesMapLibre` (loopback 127.0.0.1) ;
 5. **App Intent** : `IntentDeverrouillage` est détecté automatiquement (cible

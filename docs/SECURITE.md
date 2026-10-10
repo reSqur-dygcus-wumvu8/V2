@@ -1,13 +1,18 @@
 # Chiffrement et flux de déverrouillage
 
-## Modèle à deux niveaux
+## Modèle à deux niveaux (MLA)
 
-- **DEK** (Data Encryption Key, 256 bits) : passphrase SQLCipher de la base GRDB ;
-  chiffre aussi les fichiers binaires (dérivation par fichier).
-- **KEK** (Key Encryption Key) : clé maîtresse générée et liée au **Secure Enclave**
-  du Gestionnaire d'accès (`kSecAttrTokenIDSecureEnclave`, non extractible),
-  protégée par Face ID / Touch ID + code.
-- La DEK est stockée **enveloppée** par la KEK dans le trousseau partagé (Team ID commun).
+- **Données au repos** : archives chiffrées au format **MLA (ANSSI)** — segments
+  par domaine (entites, documents, veilles, relations, blobs/<uuid>…), chiffrement
+  + compression + signatures, option post-quantique via la FFI Rust (xcframework).
+- **Secret maître** (matériel de clés MLA) : conservé dans le trousseau privé du
+  Gestionnaire d'accès, protégé par le **Secure Enclave** (non extractible) et par
+  Face ID / Touch ID + code. Jamais dans le groupe de trousseau partagé.
+- **Clé de session** (durée limitée, réglable 5 min–24 h) : seul élément transitoire
+  du trousseau partagé ; elle déchiffre le jeu de travail en mémoire.
+- **Aucune donnée déchiffrée sur disque** : le moteur reconstruit les index en
+  mémoire à l'ouverture et consolide les archives MLA à chaque mise au repos
+  (arrière-plan, fermeture, fin de passe du collecteur).
 
 ## Flux de déverrouillage
 
@@ -16,9 +21,9 @@
 3. Le Gestionnaire d'accès vérifie la stratégie (appareil autorisé, profil lecture
    seule / complet, plage horaire) et délivre une **clé de session à durée limitée**
    dans le groupe de trousseau partagé — jamais la KEK.
-4. OSINT Suite déballe la DEK avec la clé de session et ouvre la base.
-5. La clé de session est purgée au passage en arrière-plan ou à expiration
-   (durée réglable de 5 minutes à 24 heures).
+4. OSINT Suite déchiffre les archives MLA **en mémoire** (jeu de travail) ;
+5. La clé de session est purgée au passage en arrière-plan ou à expiration ;
+   les archives sont consolidées avant fermeture.
 
 ## Règles absolues
 
@@ -58,3 +63,16 @@
    - Keychain Sharing : groupe `fr.osintsuite.shared` (valeur avec préfixe Team ID) ;
    - App Groups (optionnel, fichiers binaires chiffrés) ;
    - Face ID usage (NSFaceIDUsageDescription) pour le Gestionnaire d'accès.
+
+
+## Trafic sortant — Tor obligatoire
+
+- Client **Arti embarqué** (FFI Rust, xcframework) : proxy SOCKS5 sur 127.0.0.1 ;
+- **Résolution DNS via Tor** (pas de fuite DNS) ;
+- La fabrique `ReseauTor` est l'unique point de sortie — aucune requête ne peut
+  partir hors Tor (test d'invariant : refus propre si le client est indisponible) ;
+- Échecs (plateformes bloquant Tor, circuits coupés) **journalisés** dans le
+  journal d'exécution des veilles ; ponts obfs4 configurables dans Paramètres ;
+- Conséquences : APNs refusés par défaut (pull via Tor + notifications locales) ;
+  CloudKit exclu — la synchronisation passe par un dépôt GitHub privé relevé via
+  Tor (deltas CRDT Automerge chiffrés, interface `TransportSync`).
