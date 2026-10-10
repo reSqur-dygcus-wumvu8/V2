@@ -454,6 +454,11 @@ def contenu():
     puce("Si une plateforme bloque les sorties Tor : échec <b>journalisé</b> dans "
          "le journal d'exécution, aucune donnée perdue ;")
     puce("Ponts obfs4 configurables dans Paramètres (section Tor) ;")
+    puce("<b>Pays de sortie</b> : réglage global (Paramètres) ou par veille — "
+         "sans pays configuré, le client <b>Arti</b> offre l'anonymat maximal ; "
+         "avec un pays (ex. « fr »), le client <b>tor C</b> restreint la sortie "
+         "(ExitNodes). ⚠️ Restreindre le pays de sortie réduit l'anonymat : "
+         "option explicite, désactivée par défaut ;")
     puce("Conséquences assumées : latence accrue (cache local systématique), "
          "APNs refusés par défaut (tirage périodique + notifications locales), "
          "CloudKit exclu (synchronisation via GitHub/Tor).")
@@ -477,15 +482,41 @@ def contenu():
     puce("Le hash SHA-256 détecte les doublons d'import (fichier identique "
          "refusé) ; le texte est extrait automatiquement (TXT/MD/HTML).")
     P("<b>Veilles</b> — onglet Veilles :", "corps")
-    puce("Créez une veille Google Actualités (mots-clés), RSS/Atom (URL du flux) "
+    puce("Créez une veille d'actualités (mots-clés), RSS/Atom (URL du flux) "
          "ou réseau social (X/nitter, Telegram t.me/s, Discord bot, TikTok import "
          "manuel) ;")
+    puce("Cochez les <b>moteurs d'actualités</b> à interroger : Google, Qwant, "
+         "Yandex (tous via Tor ; par défaut Google seul) ;")
+    puce("Choisissez les <b>langues de recherche</b> (ex. « fr, en, de ») : la "
+         "veille interroge chaque moteur dans chaque langue ;")
+    puce("Option <b>pays de sortie Tor</b> (ex. « fr ») : force la sortie du "
+         "trafic par un nœud du pays — utile quand un moteur ou une source "
+         "bloque les visiteurs étrangers. ⚠️ Restreindre le pays de sortie "
+         "RÉDUIT votre anonymat : l'option est désactivée par défaut ;")
     puce("Réglez la fréquence (5 min à 24 h) et les <b>mots-clés de priorité</b> ;")
     puce("« Exécuter toutes maintenant » pour un passage immédiat ; activez/"
          "désactivez individuellement ; consultez le <b>journal d'exécution</b> "
          "(date, succès, nombre de nouveaux éléments) ;")
     puce("Chaque nouvel élément atteignant le seuil de priorité déclenche une "
          "<b>notification locale</b> (3 max par passe, pour éviter le spam).")
+    espace(4)
+    P("<b>Veille multilingue — tout s'affiche en français :</b>", "corps")
+    puce("Les résultats trouvés dans une autre langue sont <b>traduits "
+         "automatiquement en français</b> (via Mistral, à travers Tor) ;")
+    puce("Le <b>texte original est conservé</b> avec sa langue d'origine : "
+         "consultable depuis la fiche de l'élément ou le document source ;")
+    puce("Hors ligne : les éléments déjà traduits restent lisibles ; les autres "
+         "attendent le retour de la connexion (file d'attente).")
+    espace(4)
+    P("<b>Moteurs d'actualités — conditions et risques :</b>", "corps")
+    f.append(tableau_entetes(
+        ["Moteur", "Accès", "Points d'attention"],
+        [
+            ["Google Actualités", "Flux RSS officiel", "Paramètres langue/pays par requête — le plus stable"],
+            ["Qwant Actualités", "API publique v3 (JSON)", "API non contractuelle : peut évoluer sans préavis ; échec journalisé sans interrompre les autres moteurs"],
+            ["Yandex Actualités", "Flux RSS (paramètre région)", "Disponibilité variable selon le pays de sortie — c'est le cas d'usage du pays de sortie par veille"],
+        ],
+        [3.2 * cm, 4.5 * cm, 8.8 * cm]))
     f.append(bloc_note("Plateformes sans API publique : TikTok fonctionne par import "
                        "manuel (collez « url | texte », une publication par ligne) ; "
                        "X passe par des flux RSS tiers (nitter) — instables ; "
@@ -568,6 +599,8 @@ def contenu():
          "CRDT Automerge chiffrés, jamais « dernier écrit gagnant » ;")
     puce("Rôle de l'appareil : <b>collecte</b> (Mac hub, veilles périodiques) ou "
          "<b>consomme uniquement</b> (iPhone/iPad, rafraîchissement à l'ouverture) ;")
+    puce("Pays de sortie Tor global et par veille (avertissement de réduction "
+         "d'anonymat affiché) ; moteurs d'actualités et langues par veille ;")
     puce("Export de la base (sauvegarde chiffrée) ; <b>effacement complet</b> "
          "(panic wipe) avec confirmation.")
     f.append(bloc_note("Le panic wipe est également disponible côté Gestionnaire "
@@ -623,6 +656,10 @@ def contenu():
              "Ouvrir d'abord le Gestionnaire d'accès (il initialise KEK/secret MLA)"],
             ["« Échec via Tor » en boucle", "Plateforme bloquante ou circuit coupé",
              "Vérifier les ponts obfs4 (Paramètres > Tor) ; consulter le journal d'exécution"],
+            ["Un moteur d'actualités ne renvoie rien", "Blocage géographique (source refuse les visiteurs étrangers)",
+             "Configurer le pays de sortie Tor sur la veille (ex. « fr ») — en acceptant la réduction d'anonymat"],
+            ["Résultats dans une langue inconnue", "Veille multilingue : original conservé, traduction en attente",
+             "L'affichage est en français après traduction Mistral ; l'original reste consultable sur la fiche de l'élément"],
             ["Base illisible après changement d'appareil", "Secure Enclave lié à l'ancien matériel",
              "Restaurer depuis la phrase de récupération (12 mots)"],
             ["« Cette plateforme n'expose pas d'API publique »", "TikTok sans API",
