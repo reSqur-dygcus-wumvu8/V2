@@ -186,6 +186,41 @@ def contenu():
          "        Packages/Features/FeatureCapitaliser Packages/Features/FeatureExploiter \\\n"
          "        Packages/Features/FeatureGerer; do (cd $p &amp;&amp; swift test); done")
 
+    P("2.5 Installation sur iPhone et iPad", "h2")
+    P("Deux méthodes selon votre usage :", "corps")
+    P("<b>Méthode A — Développement direct (câble, compte gratuit ou payant)</b>", "corps")
+    puce("Connectez l'iPhone/iPad au Mac par câble ;")
+    puce("Dans Xcode, sélectionnez votre appareil comme destination "
+         "(il doit être enregistré : Signing &amp; Capabilities > Team) ;")
+    puce("Schemes <b>OSINTSuite-iOS</b> et <b>AccessManager-iOS</b> : ⌘R pour "
+         "installer et lancer chaque application sur l'appareil ;")
+    puce("Sur l'appareil : Réglages > Général > VPN et gestion des appareils > "
+         "votre profil développeur > <b>Approuver</b> ;")
+    puce("Note : la signature « free » expire tous les 7 jours (réinstaller via "
+         "Xcode) ; avec un compte payant, 1 an et jusqu'à 100 appareils.")
+    P("<b>Méthode B — TestFlight (compte développeur payant, recommandé)</b>", "corps")
+    code("xcodebuild -scheme OSINTSuite-iOS -configuration Release build \\\n"
+         "  -archivePath build/OSINTSuite.xcarchive -destination 'generic/platform=iOS'\n"
+         "xcodebuild -exportArchive -archivePath build/OSINTSuite.xcarchive \\\n"
+         "  -exportOptionsPlist ExportOptions.plist\n"
+         "# puis : App Store Connect > TestFlight > téléverser, inviter les testeurs")
+    puce("Les testateurs installent via l'app TestFlight depuis l'invitation ;")
+    puce("Renouvelez l'opération pour le <b>AccessManager</b> (les deux apps "
+         "doivent être installées sur l'appareil pour le déverrouillage).")
+    espace(6)
+    P("2.6 Spécificités iPhone/iPad", "h2")
+    f.append(tableau_entetes(
+        ["Sujet", "Comportement sur iPhone/iPad"],
+        [
+            ["Exécution en arrière-plan", "iOS n'autorise pas la veille continue : l'appareil est « consomme uniquement » — rafraîchissement à l'ouverture + BGTaskScheduler quand le système le permet"],
+            ["Rôle de l'appareil", "Réglages > Gérer > Rôle : laissez « consomme uniquement » ; le Mac collecte (LaunchAgent 15 min) et les résultats arrivent par synchronisation"],
+            ["Déverrouillage", "Le Gestionnaire d'accès s'authentifie par Face ID / Touch ID ou code, puis délivre la clé de session à durée limitée"],
+            ["Notifications", "Pull via Tor aux rafraîchissements + notifications locales (les APNs contournent Tor : refusés par défaut)"],
+            ["Carte hors ligne", "Préchargez la zone AVANT de partir hors connexion (Paramètres ou vue Carte) — le cache tuiles se consulte ensuite sans réseau"],
+            ["Fenêtres multiples", "iPadOS : glissez la app en Split View / Slide Over depuis le Dock (identique macOS)"],
+        ],
+        [4.5 * cm, 12 * cm]))
+
     # ============================ 3. CONFIGURATION
     f.append(NextPageTemplate("suite"))
     f.append(PageBreak())
@@ -393,7 +428,21 @@ def contenu():
                        "d'accès : la révocation de la KEK rend la base "
                        "définitivement illisible sur TOUS les appareils.", "avertissement"))
 
-    P("4.5 Gestionnaire d'accès — coffret de clés", "h2")
+    P("4.5 Utilisation sur iPhone/iPad au quotidien", "h2")
+    P("<b>Ouverture type sur mobile</b> :", "corps")
+    puce("Ouvrez OSINT Suite → « Base verrouillée » → « Demander le "
+         "déverrouillage » ;")
+    puce("Bascule vers le Gestionnaire d'accès → Face ID / code ; retour "
+         "automatique — la base est ouverte pour la durée de session ;")
+    puce("Le rafraîchissement de veille se déclenche à l'ouverture (via Tor) : "
+         "les nouveaux éléments du Mac arrivent par synchronisation ;")
+    puce("En déplacement : mode hors ligne complet — fiches, graphe, frise et "
+         "carte consultables depuis les caches locaux ; saisissez librement, "
+         "la synchronisation repartira à la reconnexion ;")
+    puce("Les alertes de mots-clés de priorité arrivent en notifications "
+         "locales lors des rafraîchissements.")
+    espace(4)
+    P("4.6 Gestionnaire d'accès — coffret de clés", "h2")
     f.append(tableau_entetes(
         ["Fonction", "Description"],
         [
