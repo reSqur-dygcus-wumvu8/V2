@@ -6,6 +6,19 @@ on:
   pull_request:
 
 jobs:
+  rust-check:
+    name: Cargo check (FFI MLA + Arti)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Vérification crate MLA
+        working-directory: Packages/PackageMLA/ffi
+        run: cargo check
+      - name: Vérification crate Arti
+        working-directory: Packages/PackageTor/ffi
+        run: cargo check
+
   swift-tests:
     name: Tests Swift (macOS)
     runs-on: macos-14
