@@ -37,7 +37,10 @@ public enum ReglesMetier {
     /// Indique si un élément de veille mérite une alerte (notification locale)
     /// selon le seuil de score configuré.
     public static func doitAlerter(score: Int, seuil: Int = 70) -> Bool {
-        score >= seuil
+        // Seuil strict : un score exactement égal au seuil (ex. source
+        // fiable sans mot-clé de priorité) n'alerte pas — l'alerte exige
+        // un dépassement.
+        score > seuil
     }
 
     /// Similarité de Jaccard entre deux textes découpés en mots (0–1).

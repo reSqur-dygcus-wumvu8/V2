@@ -30,7 +30,7 @@ final class ServiceSynchronisationTests: XCTestCase {
     func testPousserDeltaActif() async throws {
         let transport = TransportSyncFactice()
         let service = try service(transport: transport)
-        let delta = service.preparerDelta(appareil: "Mac", contenu: Data("delta-crdt".utf8))
+        let delta = await service.preparerDelta(appareil: "Mac", contenu: Data("delta-crdt".utf8))
         try await service.pousser(delta)
         XCTAssertEqual(transport.deltasPousses.count, 1)
         XCTAssertEqual(transport.deltasPousses.first?.appareil, "Mac")
@@ -39,7 +39,7 @@ final class ServiceSynchronisationTests: XCTestCase {
     func testDesactiveNePousseRien() async throws {
         let transport = TransportSyncFactice()
         let service = try service(active: false, transport: transport)
-        let delta = service.preparerDelta(appareil: "iPhone", contenu: Data("x".utf8))
+        let delta = await service.preparerDelta(appareil: "iPhone", contenu: Data("x".utf8))
         try await service.pousser(delta)
         XCTAssertTrue(transport.deltasPousses.isEmpty)
     }
@@ -58,10 +58,10 @@ final class ServiceSynchronisationTests: XCTestCase {
         XCTAssertTrue(deuxieme.isEmpty)
     }
 
-    func testDeltaChiffreAuRepos() throws {
+    func testDeltaChiffreAuRepos() async throws {
         let service = try service()
         let secret = Data("contenu sensible du CRDT".utf8)
-        let delta = service.preparerDelta(appareil: "Mac", contenu: secret)
+        let delta = await service.preparerDelta(appareil: "Mac", contenu: secret)
         // Le payload transporté ne contient pas le contenu en clair attendu
         // si l'appelant chiffre avant ; le service documente le contrat :
         XCTAssertEqual(delta.appareil, "Mac")
@@ -77,8 +77,10 @@ final class ServiceSynchronisationTests: XCTestCase {
 
     func testActivationBascule() async throws {
         let service = try service(active: false)
-        XCTAssertFalse(service.estActive)
+        let inactive = await service.estActive
+        XCTAssertFalse(inactive)
         await service.definirActive(true)
-        XCTAssertTrue(await service.estActive)
+        let active = await service.estActive
+        XCTAssertTrue(active)
     }
 }

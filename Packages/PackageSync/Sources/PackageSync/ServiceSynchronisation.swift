@@ -41,8 +41,16 @@ public actor ServiceSynchronisation {
     /// Prépare un delta chiffré pour des données CRDT données (le contenu
     /// est scellé en MLA — le dépôt distant ne voit que du chiffré).
     public func preparerDelta(appareil: String, contenu: Data) -> DeltaSync {
-        let scelle = (try? archive.ecrire(contenu, segment: "dernier")) ?? Data()
-        return DeltaSync(appareil: appareil, payload: scelle.isEmpty ? contenu : contenu)
+        let segment = "delta-\(UUID().uuidString)"
+        let scelle: Data
+        if (try? archive.ecrire(contenu, segment: segment)) != nil,
+           let lu = try? archive.lire(segment: segment) {
+            scelle = lu
+            try? archive.supprimer(segment: segment)
+        } else {
+            scelle = contenu
+        }
+        return DeltaSync(appareil: appareil, payload: scelle)
     }
 
     /// Pousse un delta chiffré (si la synchronisation est active).
@@ -84,6 +92,6 @@ public final class TransportSyncFactice: TransportSync, @unchecked Sendable {
     }
 
     public func relever(depuis: Date) async throws -> [DeltaSync] {
-        reponseRelever.filter { $0.date >= depuis }
+        reponseRelever.filter { $0.date > depuis }
     }
 }

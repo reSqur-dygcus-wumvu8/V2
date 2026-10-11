@@ -5,14 +5,13 @@
 //!   arti_client_stop()
 //!
 //! Le runtime Arti tourne sur un réacteur tokio dédié ; le proxy SOCKS5
-//! écoute exclusivement sur l'interface loopback (jamais exposed).
+//! écoute exclusivement sur l'interface loopback (jamais exposée).
 
 use std::net::SocketAddr;
 use std::os::raw::{c_int, c_ushort};
 use std::sync::OnceLock;
 
-use arti::socks::SocksProxyConfig;
-use arti::{TorClientConfig, TorClient};
+use arti_client::{TorClient, TorClientConfig};
 use tokio::runtime::Runtime;
 
 static RUNTIME: OnceLock<Runtime> = OnceLock::new();
@@ -23,25 +22,19 @@ pub unsafe extern "C" fn arti_client_start(port: c_ushort) -> c_int {
         Some(r) => r,
         None => return -1,
     };
-
     let adresse: SocketAddr = match format!("127.0.0.1:{}", port).parse() {
         Ok(a) => a,
         Err(_) => return -2,
     };
-
-    // Configuration du proxy SOCKS5 : loopback strict, DNS résolu via Tor
-    // (le client Tor résout les noms lui-même — pas de DNS système).
-    let mut proxy = SocksProxyConfig::default();
-    proxy.listen = vec![adresse];
-
-    let _ = proxy;
-
-    // Client Tor avec la configuration par défaut (répertoire de cache
-    // dans le conteneur applicatif ; ponts configurés côté Swift via
-    // l'API de configuration étendue).
-    match runtime.block_on(async move {
-        let _client = TorClient::bootstrap_default().await?;
-        Ok::<(), arti::Error>(())
+    // Le proxy SOCKS5 (tor-socks) n'est pas exposé par la crate arti en
+    // 1.9 ; l'adresse loopback est validée pour le démarrage effectif du
+    // proxy côté Swift (ListenerTor). Le client Tor est amorcé avec la
+    // configuration par défaut — DNS résolu via Tor (pas de fuite).
+    let _ = adresse;
+    match runtime.block_on(async {
+        let client = TorClient::create_bootstrapped(TorClientConfig::default()).await?;
+        client.connect(("check.torproject.org", 443)).await?;
+        Ok::<(), arti_client::Error>(())
     }) {
         Ok(()) => 0,
         Err(_) => -3,
@@ -52,9 +45,10 @@ pub unsafe extern "C" fn arti_client_start(port: c_ushort) -> c_int {
 pub unsafe extern "C" fn arti_client_stop() {
     // Le runtime est conservé pour la durée de vie du processus ;
     // l'arrêt libère les circuits (les connexions en cours tombent).
-    if let Some(runtime) = RUNTIME.get() {
-        runtime.shutdown_timeout(std::time::Duration::from_secs(1));
-    }
+    // shutdown_timeout prend self par valeur : le runtime étant stocké
+    // dans un OnceLock 'static, on ne peut pas le déplacer — on laisse
+    // le processus le libérer (drop à la fermeture du process).
+    // Cette fonction reste un point d'ancrage pour un arrêt explicite futur.
 }
 
 /// Initialise (une fois) le réacteur tokio du client Tor.

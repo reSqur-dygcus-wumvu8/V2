@@ -141,11 +141,16 @@ public actor CoffreCles {
     }
 
     /// Déballe la DEK avec la clé de session délivrée (côté app principale).
+    /// La session valide le droit d'accès (appareil autorisé, plage
+    /// horaire, expiration) ; le déballage AEAD utilise la KEK détenue
+    /// par ce coffre — la clé de session, dérivée de la KEK par HKDF,
+    /// ne peut pas déballer l'enveloppe elle-même (dérivation à sens
+    /// unique).
     public func deballerDEK(session: CleSession, maintenant: Date = Date()) throws -> SymmetricKey {
         guard session.estValide(maintenant: maintenant), let enveloppe = enveloppeDEK else {
             throw ErreurCoffre.sessionExpiree
         }
-        return try ModeleCles.deballer(enveloppe: enveloppe, kek: session.cle)
+        return try ModeleCles.deballer(enveloppe: enveloppe, kek: kek)
     }
 
     /// Ajoute un appareil autorisé.

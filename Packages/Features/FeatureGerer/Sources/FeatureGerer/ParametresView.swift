@@ -106,6 +106,7 @@ public final class ModeleParametres: ObservableObject {
         keychain: KeychainStore = KeychainStore()
     ) {
         self.dossierMLA = dossierMLA
+        self.keychain = keychain
         seuilTexte = reglages.object(forKey: "seuilTexte") as? Double ?? 0.8
         seuilDenomination = reglages.object(forKey: "seuilDenomination") as? Double ?? 0.85
         frequenceDefaut = reglages.object(forKey: "frequenceDefaut") as? Int ?? 60

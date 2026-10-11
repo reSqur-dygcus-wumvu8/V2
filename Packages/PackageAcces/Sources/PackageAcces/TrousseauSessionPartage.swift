@@ -40,10 +40,10 @@ public struct TrousseauSessionPartage: Sendable {
     public func lireSession(maintenant: Date = Date()) throws -> CleSession? {
         var requete: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount: Self.compteSession,
-            kSecAttrAccessGroup: groupePartage,
-            kSecReturnData: true,
-            kSecMatchLimit: kSecMatchLimitOne
+            kSecAttrAccount as String: Self.compteSession,
+            kSecAttrAccessGroup as String: groupePartage,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var resultat: AnyObject?
         let statut = SecItemCopyMatching(requete as CFDictionary, &resultat)
@@ -58,9 +58,9 @@ public struct TrousseauSessionPartage: Sendable {
     private func ecrire(cle: String, donnees: Data) throws {
         var requete: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount: cle,
-            kSecAttrAccessGroup: groupePartage,
-            kSecValueData: donnees
+            kSecAttrAccount as String: cle,
+            kSecAttrAccessGroup as String: groupePartage,
+            kSecValueData as String: donnees
         ]
         SecItemDelete(requete as CFDictionary)
         let statut = SecItemAdd(requete as CFDictionary, nil)
@@ -102,7 +102,7 @@ enum EncoderSession {
     private static func depuisExpiration(_ donnees: Data) -> Date {
         donnees.withUnsafeBytes { raw in
             let bits = raw.load(as: UInt64.self)
-            return Date(timeIntervalSince1970: Double(bits: bits))
+            return Date(timeIntervalSince1970: Double(bitPattern: bits))
         }
     }
 }

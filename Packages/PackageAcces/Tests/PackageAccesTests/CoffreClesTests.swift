@@ -78,12 +78,14 @@ final class CoffreClesTests: XCTestCase {
         await coffret.autoriser(AppareilAutorise(nom: "iPhone", profil: .lectureSeule))
 
         // Inconnu.
-        XCTAssertNil(await coffret.delivrerSession(appareil: "iPad inconnu"))
+        let inconnu = await coffret.delivrerSession(appareil: "iPad inconnu")
+        XCTAssertNil(inconnu)
 
         // Révoqué.
         let appareil = await coffret.appareilsAutorises().first!
         await coffret.revoquer(id: appareil.id)
-        XCTAssertNil(await coffret.delivrerSession(appareil: "iPhone"))
+        let revoque = await coffret.delivrerSession(appareil: "iPhone")
+        XCTAssertNil(revoque)
 
         // Le refus est consigné dans l'audit.
         let journal = await coffret.journalAudit()
@@ -99,10 +101,12 @@ final class CoffreClesTests: XCTestCase {
         )
         // Heure hors plage (23h simulée) : refus.
         let nuit = Calendar.current.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
-        XCTAssertNil(await coffret.delivrerSession(appareil: "Bureau", duree: 600, maintenant: nuit))
+        let sessionNuit = await coffret.delivrerSession(appareil: "Bureau", duree: 600, maintenant: nuit)
+        XCTAssertNil(sessionNuit)
         // Heure dans la plage (12h simulée) : accord.
         let midi = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!
-        XCTAssertNotNil(await coffret.delivrerSession(appareil: "Bureau", duree: 600, maintenant: midi))
+        let sessionMidi = await coffret.delivrerSession(appareil: "Bureau", duree: 600, maintenant: midi)
+        XCTAssertNotNil(sessionMidi)
     }
 
     func testSessionExpireeRefuseeAuDeballage() async throws {
@@ -150,8 +154,10 @@ final class CoffreClesTests: XCTestCase {
         await coffret.panique()
 
         // Plus d'enveloppe, plus de session délivrable.
-        XCTAssertNil(await coffret.enveloppe())
-        XCTAssertNil(await coffret.delivrerSession(appareil: "Mac"))
+        let enveloppeApres = await coffret.enveloppe()
+        XCTAssertNil(enveloppeApres)
+        let sessionApres = await coffret.delivrerSession(appareil: "Mac")
+        XCTAssertNil(sessionApres)
         // L'audit consigne le panic wipe.
         let journal = await coffret.journalAudit()
         XCTAssertTrue(journal.contains { $0.action.contains("PANIC") })
@@ -162,7 +168,8 @@ final class CoffreClesTests: XCTestCase {
         _ = await coffret.initialiserSecretMLA()
         await coffret.autoriser(AppareilAutorise(nom: "Mac", profil: .complet))
         _ = await coffret.delivrerSession(appareil: "Mac")
-        let donnees = try XCTUnwrap(await coffret.exporterAudit())
+        let donneesBrutes = await coffret.exporterAudit()
+        let donnees = try XCTUnwrap(donneesBrutes)
         let entrees = try JSONDecoder().decode([EntreeAudit].self, from: donnees)
         XCTAssertFalse(entrees.isEmpty)
     }

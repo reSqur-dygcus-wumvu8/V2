@@ -25,7 +25,7 @@ final class MoteurStockageTests: XCTestCase {
         let entite = Entite(type: .individu, denomination: "Jean Dupont", prenom: "Jean", nom: "Dupont")
         moteur.muter { $0.enregistrerEntite(entite) }
         let source = SourceInfo(denomination: "Le Monde", cotation: .b)
-        moteur.muter { $0.sources[source.id] = source }
+        moteur.muter { $0.enregistrerSource(source) }
         let document = Document(nom: "rapport.txt", typeMime: "text/plain",
                                 hashSHA256: "abc", texteExtrait: "convoi", sourceId: source.id)
         XCTAssertTrue(moteur.enregistrerDocument(document))
@@ -49,7 +49,7 @@ final class MoteurStockageTests: XCTestCase {
     func testDeduplicationDocumentsEtElements() throws {
         let moteur = try MoteurStockage(dossier: dossier, phraseSecrete: "s")
         let source = SourceInfo(denomination: "S")
-        moteur.muter { $0.sources[source.id] = source }
+        moteur.muter { $0.enregistrerSource(source) }
         let d1 = Document(nom: "a", typeMime: "text/plain", hashSHA256: "h1", sourceId: source.id)
         let d2 = Document(nom: "b", typeMime: "text/plain", hashSHA256: "h1", sourceId: source.id)
         XCTAssertTrue(moteur.enregistrerDocument(d1))
@@ -124,6 +124,7 @@ final class MoteurStockageTests: XCTestCase {
 extension MoteurStockage {
     /// Accès de test : recherche d'entité par identifiant.
     func chercherEntite(id: UUID) -> Entite? {
-        entites[id].map { $0.supprime ? nil : $0 }
+        guard let entite = entites[id], !entite.supprime else { return nil }
+        return entite
     }
 }

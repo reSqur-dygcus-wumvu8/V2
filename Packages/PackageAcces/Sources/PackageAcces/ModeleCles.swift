@@ -17,10 +17,13 @@ public enum ModeleCles {
     /// Enveloppe la DEK avec la KEK (AES-GCM) : seul ce « wrap » est stocké.
     public static func envelopper(dek: SymmetricKey, kek: SymmetricKey) throws -> EnveloppeDEK {
         let scrambled = try AES.GCM.seal(
-            dek.withUnsafeBytes { Data($0) },
+            dek.withUnsafeBytes { Data($0) } ?? Data(),
             using: kek
         )
-        return EnveloppeDEK(donnees: scrambled.combined)
+        guard let combinees = scrambled.combined else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        return EnveloppeDEK(donnees: combinees)
     }
 
     /// Déballe la DEK avec la KEK.

@@ -1,5 +1,6 @@
 import XCTest
 import PackageDomain
+import PackageTor
 @testable import PackageNetworking
 
 /// Tests de l'analyseur RSS/Atom (parsing XML sans dépendance externe).

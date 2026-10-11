@@ -207,6 +207,22 @@ public final class MoteurStockage: @unchecked Sendable {
     func enregistrerFusion(_ entree: EntreeFusion) {
         journalFusions.append(entree)
     }
+    func enregistrerVeille(_ veille: Veille) {
+        veilles[veille.id] = veille
+    }
+    func supprimerVeille(_ id: UUID) {
+        elements = elements.filter { $0.value.veilleId != id }
+        veilles[id] = nil
+    }
+    func enregistrerSource(_ source: SourceInfo) {
+        sources[source.id] = source
+    }
+    func enregistrerRegroupement(_ regroupement: RegroupementEvenement) {
+        regroupements[regroupement.id] = regroupement
+    }
+    func supprimerRegroupement(_ id: UUID) {
+        regroupements[id] = nil
+    }
 
     func enregistrerVersion(_ version: VersionEntite) {
         versions[version.entiteId, default: []].insert(version, at: 0)

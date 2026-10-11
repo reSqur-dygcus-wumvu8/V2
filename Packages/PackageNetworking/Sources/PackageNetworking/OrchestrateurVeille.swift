@@ -24,6 +24,9 @@ public actor OrchestrateurVeille {
     ) async -> ResultatExecutionVeille {
         do {
             let bruts: [ElementVeilleBrut]
+            var moteursEnEchec: [String] = []
+            var moteursTentes = 0
+            var moteursEnEchecMessage: String?
             switch veille.type {
             case .googleNews:
                 // Veille multilingue multi-moteurs : requête par
@@ -33,10 +36,11 @@ public actor OrchestrateurVeille {
                 let moteurs = veille.moteurs ?? [.google]
                 let langues = veille.langues ?? ["fr"]
                 var accumules: [ElementVeilleBrut] = []
-                var moteursEnEchec: [String] = []
+
                 for moteur in moteurs {
                     let connecteur = RegistreMoteursActu.fournisseur(pour: moteur)
                     for langue in langues {
+                        moteursTentes += 1
                         do {
                             accumules += try await connecteur.rechercher(
                                 motsCles: veille.motsCles,
@@ -53,6 +57,7 @@ public actor OrchestrateurVeille {
                     // Les échecs partiels sont remontés au journal via le
                     // message du résultat (succès vrai si au moins un
                     // moteur a répondu).
+                    moteursEnEchecMessage = "Échec Tor sur : \(moteursEnEchec.joined(separator: ", "))"
                 }
             case .rss:
                 guard let urlTexte = veille.urlSource, let url = URL(string: urlTexte) else {
@@ -83,13 +88,16 @@ public actor OrchestrateurVeille {
                     )
                 }
 
-            let messageDetail = bruts.isEmpty && !(veille.moteurs ?? []).isEmpty
+            var messageDetail = bruts.isEmpty && !(veille.moteurs ?? []).isEmpty
                 ? "Aucun résultat — échec Tor/blocage géographique possible (pays de sortie configurable sur la veille)"
                 : "\(nouveaux.count) nouvel(s) élément(s), \(bruts.count) analysé(s)"
+            if let detailEchecs = moteursEnEchecMessage {
+                messageDetail += " — \(detailEchecs)"
+            }
             return ResultatExecutionVeille(
                 veilleId: veille.id,
                 nouveauxElements: nouveaux,
-                succes: true,
+                succes: moteursTentes == 0 || moteursEnEchec.isEmpty || moteursEnEchec.count < moteursTentes,
                 message: messageDetail,
                 date: maintenant
             )

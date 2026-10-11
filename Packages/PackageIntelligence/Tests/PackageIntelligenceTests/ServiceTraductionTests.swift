@@ -7,10 +7,10 @@ import PackageDomain
 final class ServiceTraductionTests: XCTestCase {
 
     func testDetectionFrancais() {
-        XCTAssertTrue(ServiceTraduction.seembleFrancais(
+        XCTAssertTrue(ServiceTraduction.sembleFrancais(
             "Le convoi est passé par la route nationale hier soir"
         ))
-        XCTAssertFalse(ServiceTraduction.seembleFrancais(
+        XCTAssertFalse(ServiceTraduction.sembleFrancais(
             "The convoy passed the national road yesterday evening"
         ))
     }

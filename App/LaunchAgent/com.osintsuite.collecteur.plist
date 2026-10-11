@@ -11,12 +11,11 @@
     <array>
         <string>/Applications/OSINTSuite.app/Contents/Resources/collecteur</string>
         <string>__CHEMIN_BASE__</string>
-        <string>__PASSPHRASE__</string>
     </array>
 
-    <!-- Toutes les 15 minutes ; la passphrase est injectée à l'installation
-         par l'application macOS au premier déverrouillage (le modèle à deux
-         niveaux impose une session active pour régénérer le plist). -->
+    <!-- Toutes les 15 minutes ; la phrase de session est lue dans le trousseau
+         par le collecteur (entrée « phrase-collecteur »), jamais passée en
+         argument ni stockée en clair dans ce plist. -->
     <key>StartInterval</key>
     <integer>900</integer>
 

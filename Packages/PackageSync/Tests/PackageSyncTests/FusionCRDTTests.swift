@@ -21,17 +21,18 @@ final class FusionCRDTTests: XCTestCase {
 
     func testFusionModificationsConcurrentesSansPerte() throws {
         let fusion = FusionCRDT()
-        // Deux appareils partent du même état initial.
-        var etatA = try fusion.creerDocument(texte: "Biographie commune.")
-        let etatB = try fusion.creerDocument(texte: "Biographie commune.")
+        // Les deux appareils partagent le même état initial (même document,
+        // même historique — condition nécessaire à une fusion CRDT).
+        let etatInitial = try fusion.creerDocument(texte: "Biographie commune.")
+        var etatA = etatInitial
+        var etatB = etatInitial
 
         // Chaque appareil modifie indépendamment (hors ligne).
         try fusion.appliquerModification(etat: &etatA, texte: "Biographie commune. Ajout de A.")
-        var etatB2 = etatB
-        try fusion.appliquerModification(etat: &etatB2, texte: "Biographie commune. Ajout de B.")
+        try fusion.appliquerModification(etat: &etatB, texte: "Biographie commune. Ajout de B.")
 
         // Reconnexion : A fusionne le delta de B — les deux ajouts subsistent.
-        try fusion.fusionner(etatLocal: &etatA, delta: etatB2)
+        try fusion.fusionner(etatLocal: &etatA, delta: etatB)
         let resultat = try fusion.texteCourant(etat: etatA)
         XCTAssertTrue(resultat.contains("Ajout de A"), "la modification de A doit subsister")
         XCTAssertTrue(resultat.contains("Ajout de B"), "la modification de B doit subsister (pas de dernier-écrit-gagnant)")

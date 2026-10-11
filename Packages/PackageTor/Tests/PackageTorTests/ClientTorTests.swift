@@ -54,8 +54,8 @@ final class ClientTorTests: XCTestCase {
         }
         let session = try client.session()
         let proxy = session.configuration.connectionProxyDictionary
-        XCTAssertEqual(proxy?[kCFNetworkProxiesSOCKSProxy as String] as? String, "127.0.0.1")
-        XCTAssertEqual(proxy?[kCFNetworkProxiesSOCKSProxyPort as String] as? Int, 9150)
+        XCTAssertEqual(proxy?["SOCKSProxy"] as? String, "127.0.0.1")
+        XCTAssertEqual(proxy?["SOCKSProxyPort"] as? Int, 9150)
     }
 
     func testArretReinitialiseEtat() async {

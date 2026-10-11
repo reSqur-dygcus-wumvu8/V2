@@ -7,22 +7,27 @@ final class FileAttenteDiffereeTests: XCTestCase {
 
     func testAjoutEtDechargementApresCircuitTor() async throws {
         let file = FileAttenteDifferee()
-        XCTAssertEqual(await file.nombreEnAttente, 0)
+        let initial = await file.nombreEnAttente
+        XCTAssertEqual(initial, 0)
 
         await file.ajouter(TacheDifferee(genre: .executionVeille, url: "https://exemple.fr/rss"))
         await file.ajouter(TacheDifferee(genre: .telechargement, url: "https://exemple.fr/doc.pdf"))
-        XCTAssertEqual(await file.nombreEnAttente, 2)
+        let apresAjout = await file.nombreEnAttente
+        XCTAssertEqual(apresAjout, 2)
 
         // Circuit Tor coupé : rien ne sort.
         await file.circuitTorDisponible(false)
-        XCTAssertTrue(await file.decharger().isEmpty)
-        XCTAssertEqual(await file.nombreEnAttente, 2)
+        let vide = await file.decharger()
+        XCTAssertTrue(vide.isEmpty)
+        let toujoursEnAttente = await file.nombreEnAttente
+        XCTAssertEqual(toujoursEnAttente, 2)
 
         // Circuit rétabli : les tâches repartent.
         await file.circuitTorDisponible(true)
         let taches = await file.decharger()
         XCTAssertEqual(taches.count, 2)
-        XCTAssertEqual(await file.nombreEnAttente, 0)
+        let final = await file.nombreEnAttente
+        XCTAssertEqual(final, 0)
     }
 
     func testConnecteursDocumententLeurRisque() {

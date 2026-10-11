@@ -3,6 +3,24 @@ import PackageDomain
 @testable import PackageNetworking
 
 /// Tests du service d'alertes : score de priorité, seuil, notification injectée.
+/// Collecteur thread-safe des notifications pour les tests.
+final class CollecteurNotifications: @unchecked Sendable {
+    private let verrou = NSLock()
+    private var stockage: [(String, String)] = []
+    var contenu: [(String, String)] {
+        verrou.lock(); defer { verrou.unlock() }
+        return stockage
+    }
+    func ajouter(_ element: (String, String)) {
+        verrou.lock(); defer { verrou.unlock() }
+        stockage.append(element)
+    }
+    var count: Int {
+        verrou.lock(); defer { verrou.unlock() }
+        return stockage.count
+    }
+}
+
 final class ServiceAlertesTests: XCTestCase {
 
     private func veille(priorite: [String]) -> Veille {
@@ -21,9 +39,9 @@ final class ServiceAlertesTests: XCTestCase {
     }
 
     func testAlerteMotClePrioriteTitre() async {
-        var notifications: [(String, String)] = []
+        let notifications = CollecteurNotifications()
         let service = ServiceAlertes(seuilAlerte: 70) { titre, corps in
-            notifications.append((titre, corps))
+            notifications.ajouter((titre, corps))
             return true
         }
         let veille = self.veille(priorite: ["urgence"])
@@ -32,14 +50,14 @@ final class ServiceAlertesTests: XCTestCase {
         let alertes = await service.evaluer(elements: [element], veille: veille)
         XCTAssertEqual(alertes.count, 1)
         XCTAssertEqual(notifications.count, 1)
-        XCTAssertTrue(notifications[0].0.contains("Veille test"))
-        XCTAssertTrue(notifications[0].1.contains("urgence"))
+        XCTAssertTrue(notifications.contenu[0].0.contains("Veille test"))
+        XCTAssertTrue(notifications.contenu[0].1.contains("urgence"))
     }
 
     func testPasDAlerteSousSeuil() async {
-        var notifications: [(String, String)] = []
+        let notifications = CollecteurNotifications()
         let service = ServiceAlertes(seuilAlerte: 70) { titre, corps in
-            notifications.append((titre, corps))
+            notifications.ajouter((titre, corps))
             return true
         }
         let veille = self.veille(priorite: ["inexistant"])
@@ -47,13 +65,13 @@ final class ServiceAlertesTests: XCTestCase {
 
         let alertes = await service.evaluer(elements: [element], veille: veille)
         XCTAssertTrue(alertes.isEmpty)
-        XCTAssertTrue(notifications.isEmpty)
+        XCTAssertTrue(notifications.contenu.isEmpty)
     }
 
     func testSeuilPersonnaliseEtLimiteTrois() async {
-        var compte = 0
-        let service = ServiceAlertes(seuilAlerte: 50) { _, _ in
-            compte += 1
+        let compte = CollecteurNotifications()
+        let service = ServiceAlertes(seuilAlerte: 50) { titre, corps in
+            compte.ajouter((titre, corps))
             return true
         }
         let veille = self.veille(priorite: ["prioritaire"])
@@ -63,7 +81,7 @@ final class ServiceAlertesTests: XCTestCase {
         let alertes = await service.evaluer(elements: elements, veille: veille)
         // 5 éléments alertés mais 3 notifications maximum par passe.
         XCTAssertEqual(alertes.count, 5)
-        XCTAssertEqual(compte, 3)
+        XCTAssertEqual(compte.count, 3)
     }
 
     func testCotationFiableSansMotCle() async {

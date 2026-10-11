@@ -18,3 +18,4 @@ DerivedData/
 *.sqlite-wal
 *.sqlite-shm
 *.sqlite3
+target/

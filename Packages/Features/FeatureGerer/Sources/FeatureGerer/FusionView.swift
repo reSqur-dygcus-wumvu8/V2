@@ -73,7 +73,7 @@ struct LigneChoixChamp: View {
                 Text(modele.valeur(champ: champ, source: modele.choix[champ] ?? .gardee))
                     .font(.caption)
                     .lineLimit(2)
-                    .foregroundStyle(modele.choix[champ] == .fusionnee ? .tint : .primary)
+                    .foregroundStyle(modele.choix[champ] == .fusionnee ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
             }
         }
         .padding(.vertical, 2)
@@ -133,8 +133,8 @@ public final class ModeleFusion: ObservableObject {
     /// Binding du choix pour un champ.
     public func choixBinding(_ champ: String) -> Binding<SourceChamp> {
         Binding(
-            get: { choix[champ] ?? .gardee },
-            set: { choix[champ] = $0 }
+            get: { self.choix[champ] ?? .gardee },
+            set: { self.choix[champ] = $0 }
         )
     }
 
