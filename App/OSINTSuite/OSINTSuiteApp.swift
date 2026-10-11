@@ -7,6 +7,7 @@ import FeatureExploiter
 import FeatureGerer
 import PackageAcces
 import PackageDomain
+import PackageIntelligence
 import PackageMLA
 import PackagePersistence
 import PackageTor
@@ -71,6 +72,8 @@ final class EtatOSINTSuite: ObservableObject {
     private(set) var base: MoteurStockage?
     /// Client Tor embarqué : tout le trafic sortant passe par lui.
     private(set) var reseau: ReseauTor?
+    /// Mode découverte (pont Mistral via Tor) — construit après ouverture.
+    private(set) var serviceDecouverte: ServiceDecouverte?
 
     static let groupePartage = "fr.osintsuite.shared"
     private let trousseauPartage = TrousseauSessionPartage(groupePartage: groupePartage)
@@ -109,6 +112,23 @@ final class EtatOSINTSuite: ObservableObject {
             let reseauTor = ReseauTor(client: clientTor)
             self.reseau = reseauTor
             Task { try? await reseauTor.preparer() }
+            // Mode découverte : le proxy Mistral est joint via Tor ; son URL
+            // et le token client vivent dans le Keychain (jamais en clair).
+            if let urlTexte = keychain.lireToString(cle: "url-proxy"),
+               let token = keychain.lireToString(cle: "token-proxy"),
+               let url = URL(string: urlTexte) {
+                serviceDecouverte = ServiceDecouverte(
+                    clientDecouverte: ClientDecouverteProxy(
+                        urlBase: url,
+                        token: token,
+                        reseau: reseauTor
+                    )
+                )
+            } else {
+                // Sans proxy configuré, le mode découverte répond un refus
+                // propre (le modèle affiche le message d'indisponibilité).
+                serviceDecouverte = ServiceDecouverte()
+            }
             deverrouillee = true
         } catch {
             message = "Échec du déverrouillage : \(error.localizedDescription)"

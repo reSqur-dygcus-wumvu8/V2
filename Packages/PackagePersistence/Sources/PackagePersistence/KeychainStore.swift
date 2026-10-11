@@ -45,6 +45,12 @@ public final class KeychainStore: Sendable {
         return resultat as? Data
     }
 
+    /// Lit une entrée du trousseau comme chaîne (raccourci).
+    public func lireToString(cle: String) -> String? {
+        guard let donnees = try? lire(cle: cle) else { return nil }
+        return String(data: donnees, encoding: .utf8)
+    }
+
     /// Supprime une entrée du trousseau.
     public func supprimer(cle: String) throws {
         let requete = baseRequete(cle: cle)
