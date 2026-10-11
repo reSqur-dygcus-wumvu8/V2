@@ -76,14 +76,20 @@ pub unsafe extern "C" fn carchive_write(
         return -1;
     }
     let contenu = std::slice::from_raw_parts(donnees, taille);
-    // Écrit une archive MLA complète dans le fichier du segment.
-    let debut = std::io::Cursor::new(contenu.to_vec());
-    let config = ArchiveWriterConfig::new();
-    match ArchiveWriter::from_reader(debut, config) {
-        Ok(mut writer) => {
-            let _ = writer.flush(&mut handle.file);
-            0
-        }
+    // Écrit une archive MLA complète dans le fichier du segment :
+    // le contenu est ajouté comme fichier unique puis l'archive est
+    // finalisée (footer + flush) dans le fichier déjà ouvert.
+    let mut writer = match ArchiveWriter::from_config(&mut handle.file, ArchiveWriterConfig::new()) {
+        Ok(w) => w,
+        Err(_) => return -1,
+    };
+    let mut source = std::io::Cursor::new(contenu.to_vec());
+    match writer
+        .add_file("segment", contenu.len() as u64, &mut source)
+        .and_then(|_| writer.finalize())
+        .and_then(|_| writer.flush().map_err(mla::errors::Error::IOError))
+    {
+        Ok(_) => 0,
         Err(_) => -1,
     }
 }

@@ -38,7 +38,7 @@ public final class ArchiveMLA: StockageMLA {
     }
 
     public func ecrire(_ donnees: Data, segment: String) throws {
-        let chemise = cleAESGCM(scelle: donnees)
+        let chemise = try cleAESGCM(scelle: donnees)
         try chemise.write(to: cheminSegment(segment), options: .atomic)
     }
 
