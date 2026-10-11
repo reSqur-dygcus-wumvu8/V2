@@ -56,6 +56,7 @@ public struct ImportView: View {
     }
 
     private func choisirFichier() {
+        #if canImport(AppKit)
         let panneau = NSOpenPanel()
         panneau.allowsMultipleSelection = false
         panneau.canChooseDirectories = false
@@ -63,6 +64,7 @@ public struct ImportView: View {
         if panneau.runModal() == .OK, let url = panneau.url {
             chargerFichier(url: url)
         }
+        #endif
     }
 
     private func chargerFichier(url: URL) {
@@ -81,7 +83,6 @@ public struct ImportView: View {
 
 #if canImport(AppKit)
 import AppKit
-typealias NSOpenPanel = NSOpenPanel
 #endif
 
 /// Modèle de vue de l'import (MVVM), testable sans interface graphique.
@@ -95,13 +96,13 @@ public final class ModeleImport: ObservableObject {
     @Published public var nomFichier: String?
 
     private let serviceImport: ServiceImport
-    private let entrepotDocument: EntrepotDocument
-    private let entrepotSource: EntrepotSource
+    private let entrepotDocument: EntrepotDocument?
+    private let entrepotSource: EntrepotSource?
 
     public init(
         serviceImport: ServiceImport = ServiceImport(),
-        entrepotDocument: EntrepotDocument,
-        entrepotSource: EntrepotSource
+        entrepotDocument: EntrepotDocument? = nil,
+        entrepotSource: EntrepotSource? = nil
     ) {
         self.serviceImport = serviceImport
         self.entrepotDocument = entrepotDocument
@@ -118,8 +119,12 @@ public final class ModeleImport: ObservableObject {
             message = "Nom et source sont obligatoires."
             return
         }
+        guard let entrepotDocument, let entrepotSource else {
+            message = "Persistance non branchée : import impossible."
+            return
+        }
         do {
-            let source = try obtenirOuCreerSource()
+            let source = try obtenirOuCreerSource(dans: entrepotSource)
             let document = Document(
                 nom: nom,
                 dateImport: date,
@@ -136,7 +141,7 @@ public final class ModeleImport: ObservableObject {
         }
     }
 
-    private func obtenirOuCreerSource() throws -> SourceInfo {
+    private func obtenirOuCreerSource(dans entrepotSource: EntrepotSource) throws -> SourceInfo {
         let denomination = sourceDenomination.trimmingCharacters(in: .whitespaces)
         if let existante = entrepotSource.chercher(denomination: denomination) {
             return existante

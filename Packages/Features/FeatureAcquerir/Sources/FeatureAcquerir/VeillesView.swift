@@ -27,8 +27,8 @@ public struct VeillesView: View {
                         Toggle("", isOn: bindingActivation(veille)).labelsHidden()
                     }
                 }
-                .onDelete { index in
-                    modele.supprimer(at: index)
+                .onDelete { indexSet in
+                    indexSet.forEach { modele.supprimer(at: $0) }
                 }
             }
             if let selection = modele.veilleSelectionnee {
