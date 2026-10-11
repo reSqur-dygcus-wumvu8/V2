@@ -2,7 +2,7 @@ import Foundation
 import PackageDomain
 
 /// Plateforme sociale supportée par un connecteur.
-public enum PlateformeSociale: String, CaseIterable, Sendable {
+public enum PlateformeSociale: String, CaseIterable, Codable, Sendable {
     case xTwitter
     case telegram
     case discord
