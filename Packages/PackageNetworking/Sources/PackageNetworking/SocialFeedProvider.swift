@@ -7,6 +7,7 @@ public enum PlateformeSociale: String, CaseIterable, Sendable {
     case telegram
     case discord
     case tiktok
+    case vk
 
     public var libelle: String {
         switch self {
@@ -14,6 +15,7 @@ public enum PlateformeSociale: String, CaseIterable, Sendable {
         case .telegram: return "Telegram"
         case .discord: return "Discord"
         case .tiktok: return "TikTok"
+        case .vk: return "VK (ВКонтакте)"
         }
     }
 
@@ -24,6 +26,7 @@ public enum PlateformeSociale: String, CaseIterable, Sendable {
         case .telegram: return "Page publique t.me/s/<canal> (scraping HTML, gratuit) — risque : mise en page susceptible de changer."
         case .discord: return "Invites publiques + webhook lecture seule — risque : l'API complète exige un bot."
         case .tiktok: return "Aucune API publique — import manuel ou flux RSS tiers, best effort."
+        case .vk: return "API officielle wall.get avec token d'accès personnel — risque : CGU VK, token à durée de vie limitée (renouvellement périodique)."
         }
     }
 }

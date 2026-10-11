@@ -46,6 +46,25 @@ struct ProxyMistral {
             return try await appelerMistral(req, cle: cleMistral, endpoint: "embeddings")
         }
 
+        // POST /decouvrir — mode réflexion : boucle de raisonnement sur une
+        // thématique (requêtes générées, itérations d'affinage), puis
+        // synthèse structurée avec sources cotées et sources d'intérêt.
+        app.post("decouvrir") { req -> String in
+            try verifierToken(req, attendu: tokenClient)
+            guard let corps = try? req.content.decode([String: String].self),
+                  let thematique = corps["thematique"] else {
+                throw Abort(.badRequest)
+            }
+            // Boucle de réflexion : 3 itérations d'affinage sur le modèle
+            // de raisonnement, puis synthèse finale.
+            var contexte = "Explore la thématique suivante de façon approfondie : \(thematique). Structure ta réponse en synthèse, sources citées (URL, titre, fiabilité A-F), et sources d'intérêt à surveiller."
+            for _ in 0..<3 {
+                let iteration = try await appelerMistralChat(req, cle: cleMistral, prompt: contexte)
+                contexte = "Affine et complète l'analyse précédente : \(String(iteration.prefix(4000)))\nConcentre-toi sur les faits vérifiables et les sources."
+            }
+            return try await appelerMistralChat(req, cle: cleMistral, prompt: contexte + "\nProduis la synthèse finale structurée en JSON : {synthese, sources[{url,titre,cotation}], sourcesInteret[{genre, url, libelle, typeVeille, motsCles}]}.")
+        }
+
         // POST /traduire — traduction vers le français (veille multilingue).
         app.post("traduire") { req -> String in
             try verifierToken(req, attendu: tokenClient)

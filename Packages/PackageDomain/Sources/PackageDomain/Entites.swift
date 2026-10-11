@@ -42,6 +42,64 @@ public enum StatutTraitement: String, Codable, Sendable {
     case ignore
 }
 
+/// Type d'identité d'un individu : réelle, fictive ou numérique.
+public enum TypeIndividu: String, CaseIterable, Codable, Sendable {
+    case reelle
+    case fictive
+    case numerique
+
+    public var libelle: String {
+        switch self {
+        case .reelle: return "Identité réelle"
+        case .fictive: return "Identité fictive"
+        case .numerique: return "Identité numérique"
+        }
+    }
+}
+
+/// Type de lieu : réel, fictif ou numérique.
+public enum TypeLieu: String, CaseIterable, Codable, Sendable {
+    case reel
+    case fictif
+    case numerique
+
+    public var libelle: String {
+        switch self {
+        case .reel: return "Lieu réel"
+        case .fictif: return "Lieu fictif"
+        case .numerique: return "Lieu numérique"
+        }
+    }
+}
+
+/// Source liée automatiquement à une entité lors de la complétion
+/// (fiche Wikipédia, compte social…) : URL, langue, date de consultation,
+/// cotation proposée à valider.
+public struct SourceLiee: Codable, Sendable, Equatable, Identifiable {
+    public var id: UUID
+    public var url: String
+    public var langue: String?
+    public var dateConsultation: Date
+    public var cotation: FiabiliteSource?
+    public var typeSource: String
+
+    public init(
+        id: UUID = UUID(),
+        url: String,
+        langue: String? = nil,
+        dateConsultation: Date = Date(),
+        cotation: FiabiliteSource? = nil,
+        typeSource: String = "web"
+    ) {
+        self.id = id
+        self.url = url
+        self.langue = langue
+        self.dateConsultation = dateConsultation
+        self.cotation = cotation
+        self.typeSource = typeSource
+    }
+}
+
 /// Entité de la base de connaissance (table unique, colonne entityType).
 public struct Entite: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
@@ -65,6 +123,16 @@ public struct Entite: Codable, Sendable, Equatable, Identifiable {
     /// Tombstone : entité supprimée logiquement (jamais d'effacement physique,
     /// compatible fusion CRDT).
     public var supprime: Bool = false
+    /// Type d'identité (individus) : réelle, fictive ou numérique.
+    public var typeIndividu: TypeIndividu?
+    /// Individu réel associé (pour un individu fictif ou numérique).
+    public var individuReelId: UUID?
+    /// Type de lieu : réel, fictif ou numérique.
+    public var typeLieu: TypeLieu?
+    /// Adresse IP (lieu numérique).
+    public var adresseIP: String?
+    /// Sources liées automatiquement (Wikipédia, comptes sociaux…).
+    public var sourcesLiees: [SourceLiee]?
 
     public init(
         id: UUID = UUID(),
@@ -84,7 +152,12 @@ public struct Entite: Codable, Sendable, Equatable, Identifiable {
         commentaires: String? = nil,
         cotationSource: FiabiliteSource? = nil,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        typeIndividu: TypeIndividu? = nil,
+        individuReelId: UUID? = nil,
+        typeLieu: TypeLieu? = nil,
+        adresseIP: String? = nil,
+        sourcesLiees: [SourceLiee]? = nil
     ) {
         self.id = id
         self.type = type

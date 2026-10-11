@@ -716,6 +716,73 @@ def contenu():
          "./scripts/build-xcframeworks.sh\n"
          "# puis lier Frameworks/mla.xcframework et Frameworks/tor.xcframework dans Xcode")
 
+    P("3.7 Mode découverte — explorer une thématique inconnue", "h2")
+    P("Le mode découverte (onglet Découvrir du module Acquérir) lance une "
+      "recherche approfondie sur une thématique que vous tapez librement :", "corps")
+    puce("L'application appelle Mistral en <b>mode réflexion</b> (raisonnement "
+         "itératif) et effectue des <b>recherches internet via Tor</b> ;")
+    puce("Une <b>synthèse structurée</b> est rédigée : les <b>sources sont "
+         "citées</b> avec une cotation A–F <b>proposée</b> (vous validez, "
+         "modifiez ou refusez — décision humaine toujours) ;")
+    puce("À l'issue, des <b>sources d'intérêt</b> à surveiller sont proposées "
+         "(sites, flux, comptes sociaux) : <b>créez les veilles en un clic</b> "
+         "(formulaire pré-rempli) ;")
+    puce("La synthèse est <b>enregistrée comme un document</b> : importable "
+         "et capitalisable comme tout document, et vous pouvez créer des "
+         "entités depuis son contenu (clic droit sur un terme).")
+    espace(4)
+    f.append(bloc_note(
+        "Coût Mistral : une découverte consomme 5 à 15 appels API (boucle de "
+        "raisonnement). Une estimation vous est systématiquement affichée "
+        "AVANT le lancement, avec bouton de confirmation.", "avertissement"))
+
+    espace(6)
+    P("3.8 Nouvelles fonctionnalités de la base de connaissance", "h2")
+    P("<b>Individus — identité réelle, fictive ou numérique :</b>", "corps")
+    puce("La fiche Individu a un <b>type d'identité</b> : réelle, fictive ou "
+         "numérique (compte social, pseudonyme en ligne) ;")
+    puce("Un individu <b>fictif ou numérique est automatiquement proposé "
+         "d'être lié à l'individu réel</b> correspondant (détection par "
+         "similarité de nom) — vous validez ou corrigez le lien ; le lien "
+         "apparaît dans le graphe relationnel.")
+    espace(4)
+    P("<b>Lieux — réel, fictif ou numérique :</b>", "corps")
+    puce("La fiche Lieu a un <b>type de lieu</b> ; un lieu <b>numérique</b> "
+         "accepte une <b>adresse IP</b> à la place des coordonnées GPS "
+         "(format vérifié automatiquement) ;")
+    puce("La géolocalisation d'une IP reste un <b>choix explicite</b> de "
+         "votre part — jamais automatique.")
+    espace(4)
+    P("<b>Sources liées automatiques :</b>", "corps")
+    puce("À la complétion d'une fiche, la page <b>Wikipédia</b> trouvée est "
+         "ajoutée comme <b>source liée</b> (URL, langue, date de "
+         "consultation, cotation proposée) ;")
+    puce("Tout <b>compte social découvert</b> crée un individu "
+         "<b>numérique</b> associé, lié à l'entité et visible dans le graphe.")
+    espace(4)
+    P("<b>Veille VK (ВКонтакте) :</b>", "corps")
+    puce("Connecteur via l'API officielle <b>wall.get</b> avec un token "
+         "d'accès personnel créé dans vos réglages VK ;")
+    puce("Surveillance d'un compte ou d'une communauté (identifiant dans "
+         "la configuration de la veille) ;")
+    puce("Risques documentés : CGU VK, token à durée de vie limitée — "
+         "renouvelez-le périodiquement ; requêtes via Tor comme toujours.")
+    espace(4)
+    P("<b>Couche événements ACLED sur la carte :</b>", "corps")
+    puce("Affichage des événements du jeu de données <b>ACLED</b> (conflits "
+         "et événements violents géolocalisés) ;")
+    puce("Accès par l'API ACLED — <b>gratuit après inscription myACLED</b> "
+         "(acleddata.com) ; la clé d'accès est conservée dans le "
+         "<b>Gestionnaire d'accès</b>, jamais dans l'app ni le dépôt ;")
+    puce("Téléchargement via <b>Tor</b>, stockage local chiffré (archive "
+         "MLA), <b>mise à jour à la demande</b> ;")
+    puce("Filtrable par <b>date, type d'événement et zone</b> (la zone "
+         "affichée sur la carte) ;")
+    puce("<b>Clic droit sur un événement</b> : création des entités "
+         "Événement / Lieu correspondantes dans la base de connaissance ;")
+    puce("Attribution obligatoire « ACLED » affichée en permanence sur la "
+         "couche et dans tous les exports (politique ACLED).")
+
     # ============================ 4. UTILISATION
     f.append(NextPageTemplate("suite"))
     f.append(PageBreak())
