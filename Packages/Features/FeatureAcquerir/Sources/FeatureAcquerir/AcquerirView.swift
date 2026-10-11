@@ -12,6 +12,8 @@ public struct AcquerirView: View {
                 .tabItem { Label("Importer", systemImage: "square.and.arrow.down") }
             Text("Veilles : Google Actualités, flux RSS/Atom, réseaux sociaux")
                 .tabItem { Label("Veilles", systemImage: "antenna.radiowaves.left.and.right") }
+            Text("Mode découverte : exploration assistée d'une thématique")
+                .tabItem { Label("Découvrir", systemImage: "sparkle.magnifyingglass") }
         }
         .navigationTitle("Acquérir")
     }

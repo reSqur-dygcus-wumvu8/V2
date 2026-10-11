@@ -31,16 +31,19 @@ public struct ServiceCompletion: Sendable {
 
     let clientMistral: ClientProxyMistral?
     let reseau: ReseauTor
+    /// Sources liées proposées lors de la dernière complétion (Wikipédia,
+    /// comptes sociaux découverts) — à rattacher à l'entité à la validation.
+    public private(set) var sourcesLieesProposees: [SourceLiee] = []
 
     public init(clientMistral: ClientProxyMistral? = nil, reseau: ReseauTor) {
         self.clientMistral = clientMistral
         self.reseau = reseau
+        self.sourcesLieesProposees = []
     }
 
-    /// Complète une entité à partir de sa dénomination : recherche internet
-    /// (Wikipedia FR en priorité, aucune dépendance externe), puis synthèse
-    /// Mistral si le proxy est disponible. Retourne les propositions à
-    /// valider par l'utilisateur.
+    /// Complète une entité : résumé Wikipedia FR (via Tor) puis synthèse
+    /// Mistral. Retourne les propositions à valider ; la source Wikipédia
+    /// trouvée est exposée comme source liée (sourcesLieesProposees).
     public func completer(entite: Entite) async -> [ValeurProposee] {
         var propositions: [ValeurProposee] = []
 
@@ -48,6 +51,17 @@ public struct ServiceCompletion: Sendable {
         if let resume = await resumeWikipedia(denomination: entite.denomination) {
             propositions.append(
                 ValeurProposee(champ: entite.type == .individu ? "biographie" : "resume", valeur: resume, origine: .internet)
+            )
+            // Fiche Wikipédia ajoutée comme source liée (URL, langue,
+            // date de consultation) — cotation proposée à valider.
+            let encodee = entite.denomination
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? entite.denomination
+            sourcesLieesProposees.append(
+                SourceLiee(
+                    url: "https://fr.wikipedia.org/wiki/\(encodee)",
+                    langue: "fr",
+                    typeSource: "wikipedia"
+                )
             )
         }
 

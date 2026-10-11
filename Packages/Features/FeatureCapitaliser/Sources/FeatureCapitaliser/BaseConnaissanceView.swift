@@ -86,6 +86,37 @@ public struct FicheEntiteView: View {
                 if modele.type == .individu {
                     TextField("Prénom", text: $modele.prenom)
                     TextField("Nom", text: $modele.nom)
+                    Picker("Type d'identité", selection: $modele.typeIndividu) {
+                        Text("—").tag(TypeIndividu?.none)
+                        ForEach(TypeIndividu.allCases, id: \.self) { t in
+                            Text(t.libelle).tag(TypeIndividu?.some(t))
+                        }
+                    }
+                    if modele.typeIndividu == .fictive || modele.typeIndividu == .numerique {
+                        Picker("Individu réel associé", selection: $modele.individuReelId) {
+                            Text("—").tag(UUID?.none)
+                            ForEach(modele.individusReels) { reel in
+                                Text(reel.denomination).tag(UUID?.some(reel.id))
+                            }
+                        }
+                        Text("Proposition automatique par similarité de nom — à valider.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                if modele.type == .lieu {
+                    Picker("Type de lieu", selection: $modele.typeLieu) {
+                        Text("—").tag(TypeLieu?.none)
+                        ForEach(TypeLieu.allCases, id: \.self) { t in
+                            Text(t.libelle).tag(TypeLieu?.some(t))
+                        }
+                    }
+                    if modele.typeLieu == .numerique {
+                        TextField("Adresse IP", text: $modele.adresseIP)
+                        if !modele.adresseIP.isEmpty && !Entite.adresseIPValide(modele.adresseIP) {
+                            Text("⚠️ Format IPv4 invalide (ex. 192.168.1.1).")
+                                .font(.caption).foregroundStyle(.red)
+                        }
+                    }
                 }
                 if modele.type == .organisation {
                     TextField("Type d'organisation", text: $modele.typeOrganisation)
@@ -125,6 +156,19 @@ public struct FicheEntiteView: View {
             Section("Liens") {
                 ForEach(modele.relations) { relation in
                     LigneRelation(relation: relation, denomination: modele.denominationRelation(relation))
+                }
+            }
+
+            if !modele.sourcesLiees.isEmpty {
+                Section("Sources liées") {
+                    ForEach(modele.sourcesLiees) { source in
+                        VStack(alignment: .leading) {
+                            Text(source.typeSource).font(.caption).foregroundStyle(.secondary)
+                            Text(source.url).font(.caption).textSelection(.enabled)
+                            Text("Consultée le \(source.dateConsultation, style: .date)")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
 
@@ -190,6 +234,12 @@ public final class ModeleFicheEntite: ObservableObject {
     @Published public var biographie = ""
     @Published public var commentaires = ""
     @Published public var cotationSource: FiabiliteSource?
+    @Published public var typeIndividu: TypeIndividu?
+    @Published public var individuReelId: UUID?
+    @Published public var individusReels: [Entite] = []
+    @Published public var typeLieu: TypeLieu?
+    @Published public var adresseIP = ""
+    @Published public var sourcesLiees: [SourceLiee] = []
     @Published public var relations: [RelationEntites] = []
     @Published public var historique: [VersionEntite] = []
     @Published public var destinationExploiter: DestinationExploiter?
@@ -219,8 +269,27 @@ public final class ModeleFicheEntite: ObservableObject {
         biographie = entite.biographie ?? ""
         commentaires = entite.commentaires ?? ""
         cotationSource = entite.cotationSource
-        relations = (try? entrepot.relations(id: entite.id)) ?? []
-        historique = (try? entrepot.historique(entiteId: entite.id)) ?? []
+        typeIndividu = entite.typeIndividu
+        individuReelId = entite.individuReelId
+        typeLieu = entite.typeLieu
+        adresseIP = entite.adresseIP ?? ""
+        sourcesLiees = entite.sourcesLiees ?? []
+        relations = entrepot.relations(id: entite.id)
+        historique = entrepot.historique(entiteId: entite.id)
+        // Individus réels proposés pour le lien (proposition par similarité).
+        if entite.type == .individu {
+            individusReels = entrepot.parType(.individu)
+                .filter { $0.typeIndividu == .reelle && $0.id != entite.id }
+                .sorted { lhs, rhs in
+                    ReglesMetier.similariteJaccard(
+                        ReglesMetier.normaliser(lhs.denomination),
+                        ReglesMetier.normaliser(entite.denomination)
+                    ) > ReglesMetier.similariteJaccard(
+                        ReglesMetier.normaliser(rhs.denomination),
+                        ReglesMetier.normaliser(entite.denomination)
+                    )
+                }
+        }
     }
 
     /// Dénomination de l'autre extrémité d'une relation.
@@ -246,6 +315,23 @@ public final class ModeleFicheEntite: ObservableObject {
         if (entite.biographie ?? "") != biographie { champsModifies.append("biographie"); entite.biographie = biographie.isEmpty ? nil : biographie }
         if (entite.commentaires ?? "") != commentaires { champsModifies.append("commentaires"); entite.commentaires = commentaires.isEmpty ? nil : commentaires }
         if entite.cotationSource != cotationSource { champsModifies.append("cotationSource"); entite.cotationSource = cotationSource }
+        if entite.typeIndividu != typeIndividu { champsModifies.append("typeIndividu"); entite.typeIndividu = typeIndividu }
+        if entite.individuReelId != individuReelId {
+            champsModifies.append("individuReelId")
+            entite.individuReelId = individuReelId
+            // Lien identité associée : relation typée vers l'individu réel.
+            if let reel = individuReelId, reel != entite.id {
+                entrepot.relier(RelationEntites(idSource: entite.id, idCible: reel, typeRelation: "identite-associee"))
+            }
+        }
+        if entite.typeLieu != typeLieu { champsModifies.append("typeLieu"); entite.typeLieu = typeLieu }
+        if (entite.adresseIP ?? "") != adresseIP {
+            if adresseIP.isEmpty || Entite.adresseIPValide(adresseIP) {
+                champsModifies.append("adresseIP")
+                entite.adresseIP = adresseIP.isEmpty ? nil : adresseIP
+            }
+        }
+        if entite.sourcesLiees != sourcesLiees { champsModifies.append("sourcesLiees"); entite.sourcesLiees = sourcesLiees }
         if let (lat, lon) = Self.parserGPS(coordonneesGPS) {
             if entite.latitude != lat || entite.longitude != lon {
                 champsModifies.append("coordonneesGPS")
