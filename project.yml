@@ -86,7 +86,7 @@ targets:
         com.apple.security.application-groups:
           - "__TEAM_ID__.fr.osintsuite.shared"
         keychain-access-groups:
-          - "__TEAM_ID__.fr.osintsuite.shared"
+          - "$(AppIdentifierPrefix)fr.osintsuite.shared"
 
   OSINTSuite-macOS:
     templates: [AppMultiplateforme]
@@ -115,7 +115,7 @@ targets:
         com.apple.security.application-groups:
           - "__TEAM_ID__.fr.osintsuite.shared"
         keychain-access-groups:
-          - "__TEAM_ID__.fr.osintsuite.shared"
+          - "$(AppIdentifierPrefix)fr.osintsuite.shared"
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
 
@@ -140,7 +140,7 @@ targets:
         com.apple.security.application-groups:
           - "__TEAM_ID__.fr.osintsuite.shared"
         keychain-access-groups:
-          - "__TEAM_ID__.fr.osintsuite.shared"
+          - "$(AppIdentifierPrefix)fr.osintsuite.shared"
 
   AccessManager-macOS:
     templates: [AppMultiplateforme]
@@ -160,7 +160,7 @@ targets:
         com.apple.security.application-groups:
           - "__TEAM_ID__.fr.osintsuite.shared"
         keychain-access-groups:
-          - "__TEAM_ID__.fr.osintsuite.shared"
+          - "$(AppIdentifierPrefix)fr.osintsuite.shared"
         com.apple.security.app-sandbox: true
         # Aucun accès réseau : application 100 % hors ligne.
 
