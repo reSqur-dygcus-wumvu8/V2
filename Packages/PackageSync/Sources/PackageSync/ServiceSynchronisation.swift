@@ -92,6 +92,6 @@ public final class TransportSyncFactice: TransportSync, @unchecked Sendable {
     }
 
     public func relever(depuis: Date) async throws -> [DeltaSync] {
-        reponseRelever.filter { $0.date >= depuis }
+        reponseRelever.filter { $0.date > depuis }
     }
 }

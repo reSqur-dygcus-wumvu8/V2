@@ -89,7 +89,7 @@ public struct TransportSyncGitHub: TransportSync {
             guard let nom = entree["name"] as? String,
                   let chemin = entree["path"] as? String,
                   let dateFichier = Self.dateDepuisNom(nom) else { continue }
-            guard dateFichier >= depuis else { continue }
+            guard dateFichier > depuis else { continue }
             // Téléchargement du contenu du delta via Tor.
             var requeteFichier = URLRequest(url: URL(string: "https://api.github.com/repos/\(configuration.depot)/contents/\(chemin)?ref=\(configuration.branche)")!)
             requeteFichier.setValue("Bearer \(configuration.token)", forHTTPHeaderField: "Authorization")
