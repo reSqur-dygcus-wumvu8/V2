@@ -32,9 +32,11 @@ final class MoteursActuTests: XCTestCase {
         let resultat = try await google.rechercher(motsCles: [], langue: "fr", reseau: reseau)
         XCTAssertTrue(resultat.isEmpty)
         let yandex = ConnecteurYandexActu()
-        XCTAssertTrue(try await yandex.rechercher(motsCles: [], langue: "fr", reseau: reseau).isEmpty)
+        let resultatYandex = try await yandex.rechercher(motsCles: [], langue: "fr", reseau: reseau)
+        XCTAssertTrue(resultatYandex.isEmpty)
         let qwant = ConnecteurQwantActu()
-        XCTAssertTrue(try await qwant.rechercher(motsCles: [], langue: "fr", reseau: reseau).isEmpty)
+        let resultatQwant = try await qwant.rechercher(motsCles: [], langue: "fr", reseau: reseau)
+        XCTAssertTrue(resultatQwant.isEmpty)
     }
 
     func testParsingDateQwant() {
