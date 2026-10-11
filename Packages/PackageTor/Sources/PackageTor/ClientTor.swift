@@ -1,5 +1,4 @@
 import Foundation
-import CFNetwork
 
 /// État du client Tor embarqué.
 public enum EtatTor: String, Sendable, Equatable {
@@ -94,11 +93,13 @@ public final class ClientTor: @unchecked Sendable {
             throw ErreurTor.clientIndisponible
         }
         let configurationSession = URLSessionConfiguration.ephemeral
+        // Clés du dictionnaire de proxy CFNetwork (les constantes
+        // kCFNetworkProxiesSOCKS* ne sont pas exposées à Swift).
         configurationSession.connectionProxyDictionary = [
-            kCFNetworkProxiesSOCKSProxy as String: "127.0.0.1",
-            kCFNetworkProxiesSOCKSProxyPort as String: Int(configuration.portSOCKS5),
+            "SOCKSProxy": "127.0.0.1",
+            "SOCKSProxyPort": Int(configuration.portSOCKS5),
             // Résolution DNS via Tor : le système ne résout pas les noms.
-            kCFNetworkProxiesSOCKSEnable as String: true,
+            "SOCKSEnable": true,
         ]
         return URLSession(configuration: configurationSession)
     }
