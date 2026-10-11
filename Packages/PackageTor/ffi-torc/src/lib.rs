@@ -10,7 +10,7 @@ use std::os::raw::c_ushort;
 
 #[no_mangle]
 pub extern "C" fn torc_client_start(port: c_ushort, pays: *const std::os::raw::c_char) -> c_int {
-    use libtor::{TorFlag, Tor};
+    use libtor::{TorFlag, Tor, LogLevel, LogDestination};
     use std::str::FromStr;
 
     let pays = unsafe {
@@ -28,7 +28,7 @@ pub extern "C" fn torc_client_start(port: c_ushort, pays: *const std::os::raw::c
     let mut tor = Tor::new();
     tor.flag(TorFlag::SocksPort(port))
         .flag(TorFlag::DataDirectory("/tmp/osint-tor".into()))
-        .flag(TorFlag::LogToStdout(false));
+        .flag(TorFlag::LogTo(LogLevel::Notice, LogDestination::Stderr));
     // La restriction pays utilise la chaîne de configuration brute.
     let config = format!("ExitNodes {{{}}}\nStrictNodes 1", pays);
     tor.flag(TorFlag::Custom(config));

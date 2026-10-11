@@ -85,6 +85,7 @@ public final class ArchiveMLA: StockageMLA {
         let sel = try Self.chargerOuCreerSel(dossier: dossier)
         var cle = [UInt8](repeating: 0, count: 32)
         let phrase = Data(phraseSecrete.utf8)
+        let longueurCle = cle.count
         let statut = phrase.withUnsafeBytes { phraseBrut in
             sel.withUnsafeBytes { selBrut in
                 cle.withUnsafeMutableBufferPointer { cleBrut in
@@ -93,7 +94,7 @@ public final class ArchiveMLA: StockageMLA {
                         phraseBrut.baseAddress?.assumingMemoryBound(to: Int8.self), phrase.count,
                         selBrut.baseAddress?.assumingMemoryBound(to: UInt8.self), sel.count,
                         CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), Self.iterationsPBKDF2,
-                        cleBrut.baseAddress, cle.count
+                        cleBrut.baseAddress, longueurCle
                     )
                 }
             }
