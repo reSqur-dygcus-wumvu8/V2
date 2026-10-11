@@ -8,10 +8,10 @@ let package = Package(
     name: "Collecteur",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(path: "../../Packages/PackageDomain"),
-        .package(path: "../../Packages/PackageNetworking"),
-        .package(path: "../../Packages/PackagePersistence"),
-        .package(path: "../../Packages/PackageTor")
+        .package(path: "../../../Packages/PackageDomain"),
+        .package(path: "../../../Packages/PackageNetworking"),
+        .package(path: "../../../Packages/PackagePersistence"),
+        .package(path: "../../../Packages/PackageTor")
     ],
     targets: [
         .executableTarget(
