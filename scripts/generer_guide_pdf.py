@@ -516,6 +516,105 @@ def contenu():
         [5.5 * cm, 11 * cm]))
 
 
+    P("2.15 Tester sans compte développeur payant — le simulateur", "h1")
+    f.append(bloc_note(
+        "Vous pouvez découvrir et utiliser l'application à 100 % sans compte "
+        "Apple Developer payant, sur un iPhone et un iPad VIRTUELS (le "
+        "simulateur, inclus dans Xcode). Lisez d'abord le tableau des trois "
+        "situations pour choisir, puis suivez le pas-à-pas du simulateur."))
+
+    P("A. Les trois situations, selon votre compte", "h2")
+    f.append(tableau_entetes(
+        ["Votre situation", "Ce qui fonctionne", "Ce qui ne fonctionne pas"],
+        [
+            ["Aucun compte Apple développeur", "Simulateur iPhone/iPad : tout l'application, déverrouillage inclus",
+             "Aucun appareil réel"],
+            ["Compte Apple gratuit (ajouté dans Xcode)", "Simulateur complet + lancement des apps sur votre Mac",
+             "iPhone réel : les apps s'installent mais le déverrouillage reste bloqué (voir B)"],
+            ["Compte payant (99 $/an)", "Tout : Mac, iPhone, iPad, TestFlight, Mac hub",
+             "— (aucune limite)"],
+        ],
+        [4.2 * cm, 6.8 * cm, 5.5 * cm]))
+
+    P("B. Pourquoi l'iPhone réel est bloqué sans compte payant (à savoir)", "h2")
+    P("L'architecture de sécurité repose sur le <b>partage de trousseau</b> "
+      "(Keychain Sharing) entre l'OSINT Suite et le Gestionnaire d'accès : "
+      "c'est ainsi que la clé de session transite entre les deux "
+      "applications. Or Apple réserve cette capacité aux comptes payants "
+      "— <b>aucun contournement légal n'existe</b>. Conséquence concrète "
+      "avec un compte gratuit :", "corps")
+    puce("Les deux applications se <b>compilent et s'installent</b> quand "
+         "même sur un iPhone réel ;")
+    puce("mais la clé de session <b>ne peut pas transiter</b> entre elles : "
+         "l'OSINT Suite reste sur l'écran « Base verrouillée » ;")
+    puce("ce n'est donc <b>pas la peine d'essayer</b> de compléter les "
+         "étapes iPhone réelles sans compte payant — passez par le "
+         "simulateur.")
+    espace(4)
+    P("Sur le <b>simulateur</b>, aucun de ces problèmes : il n'y a pas de "
+      "signature réelle, le trousseau partagé fonctionne, tout le flux "
+      "(déverrouillage, veilles, carte, graphe) est testable — y compris "
+      "Face ID (simulé).", "corps")
+
+    P("C. Pas-à-pas du simulateur (gratuit, 15 minutes)", "h2")
+    puce("<b>1.</b> Vérifiez que Xcode est installé (étape 2.2) — c'est le "
+         "seul prérequis ; aucun compte développeur n'est nécessaire ;")
+    puce("<b>2.</b> Ouvrez le Terminal et placez-vous dans le dossier du "
+         "projet (étape 2.7 : « cd » + glisser-déposer le dossier V2) ;")
+    puce("<b>3.</b> Générez le projet si ce n'est pas déjà fait :")
+    code("xcodegen generate")
+    puce("<b>4.</b> Ouvrez le simulateur iPhone :")
+    code("open -a Simulator")
+    P("<b>Ce que vous devez voir :</b> une fenêtre affichant un iPhone "
+      "avec son écran d'accueil.", "corps")
+    puce("<b>5.</b> Compilez et lancez le Gestionnaire d'accès dans le "
+         "simulateur :")
+    code("xcodebuild -scheme AccessManager-iOS \\\n"
+         "  -destination 'platform=iOS Simulator,name=iPhone 16' build\n"
+         "xcrun simctl launch booted fr.osintsuite.acces")
+    puce("<b>6.</b> Puis l'OSINT Suite :")
+    code("xcodebuild -scheme OSINTSuite-iOS \\\n"
+         "  -destination 'platform=iOS Simulator,name=iPhone 16' build\n"
+         "xcrun simctl launch booted fr.osintsuite.app")
+    puce("<b>7.</b> Dans le simulateur : ouvrez le Gestionnaire d'accès, "
+         "autorisez l'appareil, générez la phrase de récupération ; puis "
+         "OSINT Suite > « Demander le déverrouillage ».")
+    espace(4)
+    P("<b>Ce que vous devez voir :</b> la base se déverrouille dans le "
+      "simulateur et la page d'accueil (Acquérir / Capitaliser / "
+      "Exploiter / Gérer) s'affiche. Vous pouvez tout essayer.", "corps")
+    espace(4)
+    f.append(bloc_note(
+        "Astuce : pour changer de modèle d'iPhone, listez les simulateurs "
+        "disponibles avec « xcrun simctl list devices available » et "
+        "remplacez « iPhone 16 » par le nom voulu (iPad inclus — testez "
+        "aussi la vue Split View)."))
+
+    P("D. Lancer l'OSINT Suite sur votre Mac (compte gratuit)", "h2")
+    P("Sur le Mac, le trousseau partagé fonctionne avec un compte gratuit "
+      "signé dans Xcode (Settings > Accounts > + > Apple ID). Suivez les "
+      "étapes 2.6 à 2.9 du guide, en choisissant votre Team gratuit au "
+      "moment de la signature.", "corps")
+    puce("Les applications se lancent et fonctionnent pleinement sur le "
+         "Mac ;")
+    puce("Limite : le <b>Mac hub</b> (collecte périodique via LaunchAgent) "
+         "et le Secure Enclave exigent une signature payante pour un usage "
+         "de production — pour tester, tout est utilisable ;")
+    puce("Rappel : sur Mac, contrairement à l'iPhone réel, le "
+         "déverrouillage <b>fonctionne</b> avec un compte gratuit.")
+
+    P("E. Récapitulatif — quelle voie choisir ?", "h2")
+    f.append(tableau_entetes(
+        ["Objectif", "Voie", "Coût"],
+        [
+            ["Découvrir / tester l'app", "Simulateur (section C)", "Gratuit — Xcode seul"],
+            ["Utiliser sur votre Mac", "Étapes 2.6–2.9 + compte gratuit", "Gratuit"],
+            ["Utiliser sur iPhone/iPad réels", "Compte payant obligatoire (Keychain Sharing)", "99 $/an"],
+            ["Installer sans Xcode (CI/TestFlight)", "Option 2 (§2.14) — payant aussi", "99 $/an"],
+        ],
+        [6 * cm, 7 * cm, 3.5 * cm]))
+
+
     # ============================ 3. CONFIGURATION
     f.append(NextPageTemplate("suite"))
     f.append(PageBreak())
