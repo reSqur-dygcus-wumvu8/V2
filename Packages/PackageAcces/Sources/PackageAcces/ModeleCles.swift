@@ -20,7 +20,10 @@ public enum ModeleCles {
             dek.withUnsafeBytes { Data($0) } ?? Data(),
             using: kek
         )
-        return EnveloppeDEK(donnees: scrambled.combined)
+        guard let combinees = scrambled.combined else {
+            throw CocoaError(.coderInvalidValue)
+        }
+        return EnveloppeDEK(donnees: combinees)
     }
 
     /// Déballe la DEK avec la KEK.
