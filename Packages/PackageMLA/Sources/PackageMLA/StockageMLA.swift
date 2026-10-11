@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import CommonCrypto
 
 /// Abstraction du stockage au repos : segments d'archive chiffrés.
 /// En production, chaque segment est une archive MLA (format ANSSI :
@@ -32,7 +33,7 @@ public final class ArchiveMLA: StockageMLA {
     public init(dossier: URL, phraseSecrete: String) throws {
         self.dossier = dossier
         try FileManager.default.createDirectory(at: dossier, withIntermediateDirectories: true)
-        self.cle = SymmetricKey(data: SHA256.hash(data: Data(phraseSecrete.utf8)))
+        self.cle = SymmetricKey(data: try Self.deriverCle(phraseSecrete: phraseSecrete, dossier: dossier))
         self.backendFFI = BackendFFI_MLA.estDisponible
     }
 
@@ -74,6 +75,48 @@ public final class ArchiveMLA: StockageMLA {
         let boite = try AES.GCM.SealedBox(combined: scellee)
         return try AES.GCM.open(boite, using: cle)
     }
+
+    // MARK: - Dérivation de clé (backend provisoire)
+
+    /// Dérive la clé de segment depuis la phrase secrète : sel aléatoire
+    /// propre à l'archive (fichier `sel.kdf`) + PBKDF2-SHA256 (facteur de
+    /// travail élevé contre la force brute hors ligne).
+    static func deriverCle(phraseSecrete: String, dossier: URL) throws -> Data {
+        let sel = try Self.chargerOuCreerSel(dossier: dossier)
+        var cle = Data(repeating: 0, count: 32)
+        let phrase = Data(phraseSecrete.utf8)
+        let statut = phrase.withUnsafeBytes { phraseBrut in
+            sel.withUnsafeBytes { selBrut in
+                cle.withUnsafeMutableBytes { cleBrut in
+                    CCKeyDerivationPBKDF(
+                        CCPBKDFAlgorithm(kCCPBKDF2),
+                        phraseBrut.baseAddress?.assumingMemoryBound(to: Int8.self), phrase.count,
+                        selBrut.baseAddress?.assumingMemoryBound(to: UInt8.self), sel.count,
+                        CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), Self.iterationsPBKDF2,
+                        cleBrut.baseAddress?.assumingMemoryBound(to: UInt8.self), cle.count
+                    )
+                }
+            }
+        }
+        guard statut == kCCSuccess else { throw ErreurArchiveMLA.derivationCle(statut) }
+        return cle
+    }
+
+    /// Nombre d'itérations PBKDF2 (recommandation OWASP pour PBKDF2-SHA256).
+    static let iterationsPBKDF2: UInt32 = 310_000
+
+    /// Charge le sel de l'archive, ou en génère un (16 octets aléatoires).
+    private static func chargerOuCreerSel(dossier: URL) throws -> Data {
+        let cheminSel = dossier.appendingPathComponent("sel.kdf")
+        if let existant = try? Data(contentsOf: cheminSel), existant.count == 16 {
+            return existant
+        }
+        var sel = Data(count: 16)
+        let resultat = sel.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) }
+        guard resultat == errSecSuccess else { throw ErreurArchiveMLA.generationSel(resultat) }
+        try sel.write(to: cheminSel, options: .atomic)
+        return sel
+    }
 }
 
 /// FFI vers libmla (bindings C compilés depuis ffi/ — voir
@@ -81,6 +124,19 @@ public final class ArchiveMLA: StockageMLA {
 /// la liaison réelle intervient à l'ajout du xcframework au projet Xcode.
 /// Tant que le framework n'est pas lié, estDisponible = false et le
 /// backend Swift provisoire est utilisé.
+/// Erreurs du backend Swift provisoire (dérivation de clé).
+public enum ErreurArchiveMLA: Error, LocalizedError {
+    case derivationCle(Int32)
+    case generationSel(OSStatus)
+
+    public var errorDescription: String? {
+        switch self {
+        case .derivationCle(let s): return "Dérivation de clé impossible (\(s))."
+        case .generationSel(let s): return "Génération du sel impossible (\(s))."
+        }
+    }
+}
+
 public enum BackendFFI_MLA {
 
     public static var estDisponible: Bool {

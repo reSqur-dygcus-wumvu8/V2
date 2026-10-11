@@ -64,4 +64,35 @@ final class StockageMLATests: XCTestCase {
         let brut = try Data(contentsOf: dossier.appendingPathComponent("entites.mla"))
         XCTAssertFalse(String(data: brut, encoding: .utf8)?.contains("sensibles") ?? true)
     }
+
+    func testSelArchivePersisteEtEstReutilise() throws {
+        let premiere = try archive()
+        try premiere.ecrire(Data("v1".utf8), segment: "entites")
+        let cheminSel = dossier.appendingPathComponent("sel.kdf")
+        let selInitial = try Data(contentsOf: cheminSel)
+        // Réouverture avec la même phrase : même sel, déchiffrement possible.
+        let seconde = try ArchiveMLA(dossier: dossier, phraseSecrete: "phrase-de-test")
+        XCTAssertEqual(try Data(contentsOf: cheminSel), selInitial)
+        XCTAssertEqual(try seconde.lire(segment: "entites"), Data("v1".utf8))
+    }
+
+    func testSelsDistinctsEntreArchives() throws {
+        try archive().ecrire(Data("a".utf8), segment: "entites")
+        let selPremier = try Data(contentsOf: dossier.appendingPathComponent("sel.kdf"))
+        let autreDossier = dossier.appendingPathComponent("sous-dossier")
+        try FileManager.default.createDirectory(at: autreDossier, withIntermediateDirectories: true)
+        _ = try ArchiveMLA(dossier: autreDossier, phraseSecrete: "phrase-de-test")
+        let selSecond = try Data(contentsOf: autreDossier.appendingPathComponent("sel.kdf"))
+        // Deux archives distinctes ne partagent pas le même sel.
+        XCTAssertNotEqual(selPremier, selSecond)
+    }
+
+    func testDerivationCleDeterministePourMemePhraseEtSel() throws {
+        let premiere = try archive()
+        let seconde = try ArchiveMLA(dossier: dossier, phraseSecrete: "phrase-de-test")
+        // Même phrase + même sel (réutilisé dans le même dossier) → même clé
+        // → déchiffrement possible depuis une nouvelle instance.
+        try premiere.ecrire(Data("secret".utf8), segment: "entites")
+        XCTAssertEqual(try seconde.lire(segment: "entites"), Data("secret".utf8))
+    }
 }

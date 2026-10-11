@@ -57,8 +57,10 @@
    - passage en arrière-plan : `verrouiller()` purge la session et ferme la base.
 4. **Mac hub** : exécutable `Collecteur` (`App/OSINTSuite/Collecteur`) exécuté par le
    LaunchAgent `App/LaunchAgent/com.osintsuite.collecteur.plist` (toutes les 15 min).
-   La passphrase DEK est passée en argument au moment de l'installation par l'app
-   macOS (jamais stockée en clair sur disque) ; ajuster `__CHEMIN_BASE__`.
+   La phrase de session est lue par le collecteur dans le trousseau (entrée
+   « phrase-collecteur » du service `com.osintsuite.secrets`, écrite par l'app
+   macOS à l'installation) — jamais passée en argument ni stockée en clair sur
+   disque ; ajuster `__CHEMIN_BASE__`.
 5. **Entitlements à configurer dans Xcode** (les deux apps, même Team ID) :
    - Keychain Sharing : groupe `fr.osintsuite.shared` (valeur avec préfixe Team ID) ;
    - App Groups (optionnel, fichiers binaires chiffrés) ;
