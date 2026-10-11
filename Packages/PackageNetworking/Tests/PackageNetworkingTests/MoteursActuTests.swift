@@ -1,5 +1,6 @@
 import XCTest
 import PackageDomain
+import PackageTor
 @testable import PackageNetworking
 
 /// Tests des connecteurs d'actualités (URL, régions, parsing factice).
