@@ -109,7 +109,7 @@ struct AccueilGestionnaireView: View {
                     }
                 }
                 Section("Appareils autorisés") {
-                    ForEach(etat.appareils) { appareil in
+                    ForEach(etat.appareils, id: \.id) { appareil in
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(appareil.nom).bold()
@@ -152,7 +152,7 @@ struct AccueilGestionnaireView: View {
                     }
                 }
                 Section("Journal d'audit") {
-                    ForEach(etat.journal.suffix(20).reversed()) { entree in
+                    ForEach(etat.journal.suffix(20).reversed(), id: \.id) { entree in
                         VStack(alignment: .leading) {
                             Text(entree.date, style: .date)
                             Text("\(entree.appareil) — \(entree.action)")
