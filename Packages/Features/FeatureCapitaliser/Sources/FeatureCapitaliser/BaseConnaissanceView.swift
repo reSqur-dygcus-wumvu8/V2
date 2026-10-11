@@ -17,7 +17,7 @@ public struct BaseConnaissanceView: View {
                 TextField("Recherche", text: $modele.recherche)
                     .textFieldStyle(.roundedBorder)
             }
-            ForEach(TypeEntite.allCases) { type in
+            ForEach(TypeEntite.allCases, id: \.self) { type in
                 let entites = modele.entitesFiltrees(type: type)
                 if !entites.isEmpty {
                     Section(type.libelle) {
