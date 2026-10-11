@@ -105,14 +105,11 @@ public struct EntrepotVeille: Sendable {
     }
 
     public func enregistrer(_ veille: Veille) {
-        moteur.muter { $0.veilles[veille.id] = veille }
+        moteur.muter { $0.enregistrerVeille(veille) }
     }
 
     public func supprimer(_ id: UUID) {
-        moteur.muter { moteur in
-            moteur.elements = moteur.elements.filter { $0.value.veilleId != id }
-            moteur.veilles[id] = nil
-        }
+        moteur.muter { $0.supprimerVeille(id) }
     }
 
     public func journaliser(_ resultat: ResultatJournal) {
@@ -171,7 +168,7 @@ public struct EntrepotSource: Sendable {
     }
 
     public func enregistrer(_ source: SourceInfo) {
-        moteur.muter { $0.sources[source.id] = source }
+        moteur.muter { $0.enregistrerSource(source) }
     }
 
     public func toutes() -> [SourceInfo] {
@@ -193,7 +190,7 @@ public struct EntrepotRegroupement: Sendable {
     }
 
     public func enregistrer(_ regroupement: RegroupementEvenement) {
-        moteur.muter { $0.regroupements[regroupement.id] = regroupement }
+        moteur.muter { $0.enregistrerRegroupement(regroupement) }
     }
 
     public func tous() -> [RegroupementEvenement] {
@@ -201,7 +198,7 @@ public struct EntrepotRegroupement: Sendable {
     }
 
     public func supprimer(_ id: UUID) {
-        moteur.muter { $0.regroupements[id] = nil }
+        moteur.muter { $0.supprimerRegroupement(id) }
     }
 }
 
