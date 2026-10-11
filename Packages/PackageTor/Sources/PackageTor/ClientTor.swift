@@ -117,32 +117,56 @@ public enum ErreurTor: Error, LocalizedError {
     }
 }
 
-/// FFI vers Arti (crate arti compilée en xcframework —
-/// scripts/build-tor-xcframework.sh). Symboles déclarés ici, liés à
-/// l'ajout du xcframework au projet Xcode.
-public enum BackendFFI_Arti {
-
-    public static var estDisponible: Bool {
-        dlsym(UnsafeMutableRawPointer(bitPattern: 0), "arti_client_start") != nil
+/// Liaisons FFI résolues à l'exécution via dlsym : aucune référence de
+/// symbole n'est émise à l'édition de liens, ce qui permet de compiler
+/// et lier les tests même sans le xcframework Arti/libtor (les appels
+/// échouent proprement si les bibliothèques ne sont pas embarquées).
+enum LiaisonFFI {
+    static func symbole(_ nom: String) -> UnsafeMutableRawPointer? {
+        dlsym(dlopen(nil, RTLD_LAZY), nom)
     }
 }
 
-// Liaisons C minimales (résolues au lien du xcframework).
-@_silgen_name("arti_client_start")
-func arti_client_start(_ port: UInt16) -> Int32
-@_silgen_name("arti_client_stop")
-func arti_client_stop()
+/// FFI vers Arti (crate arti compilée en xcframework —
+/// scripts/build-tor-xcframework.sh).
+public enum BackendFFI_Arti {
+    public static var estDisponible: Bool {
+        LiaisonFFI.symbole("arti_client_start") != nil
+    }
+}
+
+func arti_client_start(_ port: UInt16) -> Int32 {
+    typealias Signature = @convention(c) (UInt16) -> Int32
+    guard let brut = LiaisonFFI.symbole("arti_client_start"),
+          let fonction = unsafeBitCast(brut, to: Signature.self) else { return -1 }
+    return fonction(port)
+}
+
+func arti_client_stop() {
+    typealias Signature = @convention(c) () -> Void
+    guard let brut = LiaisonFFI.symbole("arti_client_stop"),
+          let fonction = unsafeBitCast(brut, to: Signature.self) else { return }
+    fonction()
+}
 
 /// FFI vers tor C (crate libtor compilée en xcframework —
-/// scripts/build-xcframeworks.sh, cible torc.xcframework). Symboles
-/// déclarés ici, liés à l'ajout du xcframework au projet Xcode.
+/// scripts/build-xcframeworks.sh, cible torc.xcframework).
 public enum BackendFFI_torC {
     public static var estDisponible: Bool {
-        dlsym(UnsafeMutableRawPointer(bitPattern: 0), "torc_client_start") != nil
+        LiaisonFFI.symbole("torc_client_start") != nil
     }
 }
 
-@_silgen_name("torc_client_start")
-func torc_client_start(_ port: UInt16, _ pays: UnsafePointer<CChar>) -> Int32
-@_silgen_name("torc_client_stop")
-func torc_client_stop()
+func torc_client_start(_ port: UInt16, _ pays: UnsafePointer<CChar>) -> Int32 {
+    typealias Signature = @convention(c) (UInt16, UnsafePointer<CChar>) -> Int32
+    guard let brut = LiaisonFFI.symbole("torc_client_start"),
+          let fonction = unsafeBitCast(brut, to: Signature.self) else { return -1 }
+    return fonction(port, pays)
+}
+
+func torc_client_stop() {
+    typealias Signature = @convention(c) () -> Void
+    guard let brut = LiaisonFFI.symbole("torc_client_stop"),
+          let fonction = unsafeBitCast(brut, to: Signature.self) else { return }
+    fonction()
+}
