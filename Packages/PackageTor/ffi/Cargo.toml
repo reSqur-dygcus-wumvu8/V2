@@ -10,5 +10,5 @@ name = "artiffi"
 crate-type = ["staticlib"]
 
 [dependencies]
-arti = "1.2"
+arti-client = "0.38"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

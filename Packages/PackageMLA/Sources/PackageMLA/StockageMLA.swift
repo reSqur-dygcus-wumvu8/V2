@@ -83,23 +83,23 @@ public final class ArchiveMLA: StockageMLA {
     /// travail élevé contre la force brute hors ligne).
     static func deriverCle(phraseSecrete: String, dossier: URL) throws -> Data {
         let sel = try Self.chargerOuCreerSel(dossier: dossier)
-        var cle = Data(repeating: 0, count: 32)
+        var cle = [UInt8](repeating: 0, count: 32)
         let phrase = Data(phraseSecrete.utf8)
         let statut = phrase.withUnsafeBytes { phraseBrut in
             sel.withUnsafeBytes { selBrut in
-                cle.withUnsafeMutableBytes { cleBrut in
+                cle.withUnsafeMutableBufferPointer { cleBrut in
                     CCKeyDerivationPBKDF(
                         CCPBKDFAlgorithm(kCCPBKDF2),
                         phraseBrut.baseAddress?.assumingMemoryBound(to: Int8.self), phrase.count,
                         selBrut.baseAddress?.assumingMemoryBound(to: UInt8.self), sel.count,
                         CCPseudoRandomAlgorithm(kCCPRFHmacAlgSHA256), Self.iterationsPBKDF2,
-                        cleBrut.baseAddress?.assumingMemoryBound(to: UInt8.self), cle.count
+                        cleBrut.baseAddress, cle.count
                     )
                 }
             }
         }
         guard statut == kCCSuccess else { throw ErreurArchiveMLA.derivationCle(statut) }
-        return cle
+        return Data(cle)
     }
 
     /// Nombre d'itérations PBKDF2 (recommandation OWASP pour PBKDF2-SHA256).
