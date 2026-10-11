@@ -1,0 +1,89 @@
+name: TestFlight
+
+# Compilation sur les machines GitHub (Xcode préinstallé) et publication
+# TestFlight — permet d'installer sans Xcode sur le Mac.
+# Prérequis (secrets du dépôt, voir docs/XCODE.md § Option 2) :
+#   BUILD_CERTIFICATE_BASE64   : certificat de distribution (.p12, base64)
+#   P12_PASSWORD               : mot de passe du .p12
+#   KEYCHAIN_PASSWORD          : mot de passe du trousseau éphémère
+#   APP_STORE_CONNECT_API_KEY_ID / ISSUER_ID / CONTENT (.p8, base64)
+#   PROVISIONING_PROFILE_BASE64 : profil de distribution App Store (mobileprovision)
+
+on:
+  push:
+    branches: [main]
+    tags: ["testflight-*"]
+  workflow_dispatch:
+
+jobs:
+  testflight:
+    name: Build et publication TestFlight
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Renseigner le Team ID (remplacement automatique)
+        run: |
+          TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
+          if [ -z "$TEAM_ID" ]; then
+            echo "Secret APPLE_TEAM_ID manquant (Team ID Apple, 10 caractères)."
+            exit 1
+          fi
+          sed -i '' "s/__TEAM_ID__/$TEAM_ID/g" project.yml
+
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+
+      - name: Générer le projet
+        run: xcodegen generate
+
+      - name: Créer le trousseau de signature
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          p12-password: ${{ secrets.P12_PASSWORD }}
+          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      - name: Décoder le profil de provisionnement
+        run: |
+          mkdir -p build/profiles
+          echo -n "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 --decode -o build/profiles/distribution.mobileprovision
+          cp build/profiles/distribution.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/distribution.mobileprovision 2>/dev/null || {
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            cp build/profiles/distribution.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+          }
+
+      - name: Compiler OSINT Suite (iOS)
+        run: |
+          xcodebuild -scheme OSINTSuite-iOS -configuration Release \
+            -archivePath build/OSINTSuite.xcarchive \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            clean archive
+
+      - name: Exporter l'IPA
+        env:
+          EXPORT_OPTIONS: |
+            {
+              "method": "app-store-connect",
+              "teamID": "${{ secrets.APPLE_TEAM_ID }}",
+              "signingStyle": "automatic",
+              "uploadSymbols": true
+            }
+        run: |
+          echo "$EXPORT_OPTIONS" > build/ExportOptions.plist
+          xcodebuild -exportArchive \
+            -archivePath build/OSINTSuite.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist \
+            -exportPath build/ipa
+
+      - name: Publier sur TestFlight
+        uses: apple-actions/upload-testflight-build@v3
+        with:
+          app-name: OSINTSuite
+          issuer-id: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          api-private-key: ${{ secrets.APP_STORE_CONNECT_API_CONTENT }}
+          filePath: build/ipa/*.ipa

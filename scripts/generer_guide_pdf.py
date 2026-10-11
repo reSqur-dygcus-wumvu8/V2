@@ -367,6 +367,155 @@ def contenu():
       "« TEST SUCCEEDED » en vert. Un « TEST FAILED » rouge : copiez le "
       "message pour le ticket.", "corps")
 
+    P("2.14 Option 2 — Installer sans Xcode sur le Mac (GitHub + TestFlight)", "h1")
+    f.append(bloc_note(
+        "Cette variante compile l'application sur les machines de GitHub (Xcode "
+        "y est déjà installé) et la publie sur TestFlight : vous n'installez "
+        "rien sur votre Mac. En contrepartie, la préparation des clés de "
+        "signature est plus délicate (une bonne heure la première fois) et le "
+        "compte développeur payant (99 $/an) est obligatoire. À réserver à "
+        "ceux qui ne peuvent pas installer Xcode (Mac trop ancien ou trop "
+        "rempli). Pour tous les autres, la méthode classique (étapes 2.2 à "
+        "2.9) reste plus simple."))
+
+    P("A. Ce qu'il vous faut avant de commencer", "h2")
+    puce("Un compte <b>Apple Developer payant</b> (99 $/an) — obligatoire "
+         "pour TestFlight ;")
+    puce("Un navigateur web (tout se fait sur des sites web et dans GitHub, "
+         "jamais dans Xcode) ;")
+    puce("Votre <b>Team ID</b> (étape 2.5 du guide) — notez-le ;")
+    puce("15 minutes de patience pour les téléchargements automatiques.")
+
+    P("B. Créer les clés de signature sur le site Apple (une seule fois)", "h2")
+    P("<b>B1. Créer un certificat de distribution :</b>", "corps")
+    puce("1. Ouvrez l'app <b>Trousseau d'accès</b> du Mac (Cmd+Espace, tapez "
+         "« Trousseau ») ; menu <b>Trousseau d'accès > Assistant de "
+         "certificat > Demander un certificat à une autorité de "
+         "certification</b> ;")
+    puce("2. Entrez votre adresse e-mail, un nom commun quelconque, cochez "
+         "« Enregistré sur le disque », <b>Continuer</b> : un fichier "
+         "CertificateSigningRequest.certSigningRequest est créé ;")
+    puce("3. Sur le site développeur Apple : <b>Certificates, Identifiers "
+         "&amp; Profiles > Certificates > +</b> > choisissez <b>Apple "
+         "Distribution</b> > téléversez le fichier .certSigningRequest ;")
+    puce("4. <b>Téléchargez</b> le certificat obtenu (fichier .cer) ;")
+    puce("5. Double-cliquez sur le .cer : il s'installe dans le trousseau ;")
+    puce("6. Dans Trousseau d'accès, catégorie <b>My Certificates</b> "
+         "(Mes certificats) : cliquez la petite flèche devant votre "
+         "certificat pour afficher la clé privée ; sélectionnez <b>les "
+         "deux lignes</b> (certificat + clé) ; clic droit > <b>Exporter "
+         "2 éléments</b> ; nommez-le <b>distribution</b>, format .p12, "
+         "choisissez un <b>mot de passe simple</b> (ex. osint2024) — "
+         "notez-le, c'est le P12_PASSWORD ;")
+    puce("7. Fichier obtenu : <b>distribution.p12</b> — ne le partagez "
+         "jamais (il signe vos applications).")
+    espace(4)
+    P("<b>B2. Créer le profil de provisionnement :</b>", "corps")
+    puce("1. Sur le site développeur Apple : <b>Profiles > +</b> > "
+         "<b>App Store Connect</b> > continuez ;")
+    puce("2. Choisissez l'App ID <b>fr.osintsuite.app</b> (créez-le au "
+         "besoin : Identifiers > + > App > description « OSINT Suite », "
+         "Bundle ID explicite fr.osintsuite.app) ;")
+    puce("3. Sélectionnez votre certificat de distribution > <b>Générer</b> "
+         "> <b>téléchargez</b> le fichier .mobileprovision ;")
+    puce("4. Notez le nom exact du profil affiché (ex. "
+         "« OSINT Suite App Store ») ;")
+    puce("5. IMPORTANT : recommencez pour l'App ID "
+         "<b>fr.osintsuite.acces</b> (le Gestionnaire d'accès doit être "
+         "publié séparément).")
+    espace(4)
+    P("<b>B3. Créer une clé API App Store Connect :</b>", "corps")
+    puce("1. Sur <b>appstoreconnect.apple.com</b> : icône de vos initiales "
+         "en haut > <b>App Store Connect > Gérer</b> > onglet <b>Intégrations "
+         "> Clés d'équipe</b> > <b>+ Générez une clé API</b> ;")
+    puce("2. Nom : « github-actions » ; accès : <b>Admin</b> (ou au "
+         "minimum App Manager) ; <b>Générer</b> ;")
+    puce("3. La page affiche TROIS informations à noter immédiatement : "
+         "<b>ID de la clé</b> (Key ID), <b>ID d'émetteur</b> (Issuer ID), "
+         "et le bouton <b>Télécharger la clé API</b> (fichier "
+         "AuthKey_XXXXXXXX.p8 — <b>impossible à retélécharger ensuite !</b>) ;")
+    espace(4)
+    P("<b>B4. Créer l'app dans App Store Connect :</b>", "corps")
+    puce("Sur appstoreconnect.apple.com : <b>Mes apps > + Nouvelle "
+         "app</b> ; nom « OSINT Suite », langue français, Bundle ID "
+         "fr.osintsuite.app, SKU « osintsuite » ; répétez pour "
+         "« Gestionnaire d'accès » avec fr.osintsuite.acces et le SKU "
+         "« osintacces ».")
+
+    P("C. Déposer les secrets dans GitHub", "h2")
+    P("Sur github.com : votre dépôt > <b>Settings > Secrets and variables "
+      "> Actions > New repository secret</b>. Créez SEPT secrets — pour "
+      "les fichiers, il faut d'abord les convertir en texte base64 :", "corps")
+    puce("1. Ouvrez le Terminal ; glissez-y le dossier contenant vos "
+         "fichiers (distribution.p12, .mobileprovision, AuthKey.p8) ;")
+    puce("2. Convertissez chacun en base64 (remplacez les noms par vos "
+         "fichiers) :")
+    code("base64 -i distribution.p12 -o cert.txt\\n"
+         "base64 -i distribution.mobileprovision -o profile.txt\\n"
+         "base64 -i AuthKey_ABC123.p8 -o key.txt\\n"
+         "# puis ouvrez chaque .txt et copiez tout son contenu")
+    f.append(tableau_entetes(
+        ["Nom du secret GitHub", "Contenu à coller"],
+        [
+            ["APPLE_TEAM_ID", "Votre Team ID (10 caractères)"],
+            ["BUILD_CERTIFICATE_BASE64", "Tout le contenu de cert.txt"],
+            ["P12_PASSWORD", "Le mot de passe choisi en B1.6"],
+            ["KEYCHAIN_PASSWORD", "Un mot de passe quelconque (ex. osint-keychain)"],
+            ["PROVISIONING_PROFILE_BASE64", "Tout le contenu de profile.txt"],
+            ["APP_STORE_CONNECT_API_KEY_ID", "L'ID de la clé (B3)"],
+            ["APP_STORE_CONNECT_API_ISSUER_ID", "L'ID d'émetteur (B3)"],
+            ["APP_STORE_CONNECT_API_CONTENT", "Tout le contenu de key.txt"],
+        ],
+        [6.5 * cm, 10 * cm]))
+
+    P("D. Lancer la compilation", "h2")
+    puce("1. Dans le dépôt GitHub : onglet <b>Actions</b> ;")
+    puce("2. Dans la liste de gauche, cliquez sur <b>TestFlight</b> ;")
+    puce("3. Bouton <b>Run workflow</b> > branche main > <b>Run "
+         "workflow</b> (vert) ;")
+    puce("4. Attendez environ 15 minutes (les machines GitHub compilent, "
+         "signent et publient). <b>Ce que vous devez voir :</b> une coche "
+         "verte à côté du run ; en cas de croix rouge, cliquez le run, "
+         "ouvrez l'étape en rouge et lisez la dernière ligne — c'est le "
+         "message à me transmettre.")
+    espace(4)
+
+    P("E. Installer sur l'iPhone", "h2")
+    puce("1. Sur appstoreconnect.apple.com : votre app <b>OSINT Suite</b> > "
+         "onglet <b>TestFlight</b> : la version construite apparaît "
+         "(« Prêt à être soumis » ou « En traitement » — patientez "
+         "quelques minutes) ;")
+    puce("2. Section <b>Testeurs</b> : bouton + > ajoutez votre propre "
+         "adresse e-mail ; le lien d'invitation part par mail ;")
+    puce("3. Sur l'iPhone : installez l'app <b>TestFlight</b> depuis "
+         "l'App Store, ouvrez le mail, touchez le lien ;")
+    puce("4. <b>Installer</b> OSINT Suite ; répétez pour <b>Gestionnaire "
+         "d'accès</b> (deux apps, un seul TestFlight) ;")
+    puce("5. Ouvrez le Gestionnaire d'accès, autorisez l'appareil, "
+         "notez la phrase de récupération — puis OSINT Suite et "
+         "« Demander le déverrouillage ».")
+    espace(4)
+    f.append(bloc_note(
+        "Limites de l'option 2 : chaque mise à jour du code repart d'un push "
+        "GitHub puis d'un build (~15 min). Et le rôle « Mac hub » (collecte "
+        "des veilles) exige malgré tout l'app sur le Mac — que vous devrez "
+        "construire une fois avec la méthode classique (ou accepter de "
+        "n'utiliser que le rôle « consomme uniquement » sur iPhone).",
+        "avertissement"))
+
+    P("F. Ça ne marche pas ? Pannes classiques de l'option 2", "h2")
+    f.append(tableau_entetes(
+        ["Message sur GitHub", "Solution"],
+        [
+            ["Secret APPLE_TEAM_ID manquant", "Le secret n'a pas été créé (étape C) : vérifiez Settings > Secrets > Actions."],
+            ["« no signing certificate » / « no provisioning profile »", "Le .p12 ou le profil ne correspond pas à votre Team : refaites B1/B2 en vérifiant que le certificat est bien Apple Distribution et le profil App Store Connect."],
+            ["« …is not registered on your account » (bundle ID)", "L'App ID n'existe pas sur le portail : créez fr.osintsuite.app (B4) avant de relancer."],
+            ["Coche verte mais rien sur TestFlight", "Attendez : le traitement Apple prend 5 à 30 minutes après le build ; vérifiez que l'app existe bien dans App Store Connect (B4)."],
+            ["« Invalid API key » à l'upload", "Les trois valeurs B3 ont été mélangées : Key ID ≠ Issuer ID ≠ contenu du fichier .p8. Refaites l'étape C en vérifiant chaque secret une par une."],
+        ],
+        [5.5 * cm, 11 * cm]))
+
+
     # ============================ 3. CONFIGURATION
     f.append(NextPageTemplate("suite"))
     f.append(PageBreak())
