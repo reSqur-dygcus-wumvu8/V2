@@ -657,9 +657,25 @@ def contenu():
          "swift run   # le proxy écoute sur le port 8080")
     P("Testez la disponibilité :", "corps")
     code("curl https://votre-serveur.example.com/sante\n# réponse attendue : ok")
-    P("Dans l'OSINT Suite (Paramètres), renseignez l'URL du proxy et le token "
-      "client — tous deux stockés dans le <b>Keychain</b>, jamais dans les "
-      "réglages en clair.", "corps")
+    P("<b>Raccordement dans l'application :</b> l'URL du proxy et le token "
+      "client sont stockés dans le <b>Keychain</b> de l'app (jamais dans les "
+      "réglages en clair). Deux façons de les y écrire :", "corps")
+    puce("<b>Méthode simple (Paramètres de l'app) :</b> Gérer > Paramètres > "
+         "Clés — saisissez l'URL du proxy et le token client ; ils sont "
+         "écrits dans le Keychain (clés <b>url-proxy</b> et "
+         "<b>token-proxy</b>) ;")
+    puce("<b>Vérification (Terminal, sur Mac) :</b> après le premier "
+         "lancement de l'app, vous pouvez contrôler la présence des entrées "
+         "trousseau avec l'app « Trousseau d'accès » (chercher "
+         "« com.osintsuite.secrets »).")
+    espace(4)
+    P("<b>Avec ce réglage, les fonctions suivantes deviennent actives :</b>", "corps")
+    puce("Résumés, NER et cotation assistée (Capitaliser) ;")
+    puce("Traduction automatique des veilles multilingues ;")
+    puce("<b>Mode découverte</b> (Acquérir > Découvrir) — sans proxy "
+         "configuré, ce mode répond « indisponible » sans bloquer le reste ;")
+    puce("Complétion automatique des fiches (la partie Wikipedia fonctionne "
+         "même sans proxy, via Tor).")
 
     P("3.4 Collecteur « Mac hub » et LaunchAgent", "h2")
     P("iOS n'autorise pas l'exécution continue en arrière-plan : le Mac est le "
@@ -782,6 +798,20 @@ def contenu():
          "Événement / Lieu correspondantes dans la base de connaissance ;")
     puce("Attribution obligatoire « ACLED » affichée en permanence sur la "
          "couche et dans tous les exports (politique ACLED).")
+
+    espace(6)
+    P("3.9 Vos clés et comptes externes — récapitulatif du premier usage", "h2")
+    f.append(tableau_entetes(
+        ["Fonction", "Ce qu'il faut fournir", "Où c'est conservé"],
+        [
+            ["Actions Mistral (résumé, NER, traduction, découverte)", "URL du proxy + token client (§3.3)", "Keychain de l'app (url-proxy / token-proxy)"],
+            ["VK (ВКонтакте)", "Token d'accès personnel créé dans vos réglages VK", "Keychain de l'app"],
+            ["Discord", "Token du bot + identifiant du canal", "Keychain de l'app"],
+            ["Couche ACLED", "Clé myACLED + e-mail du compte (inscription gratuite sur acleddata.com)", "Gestionnaire d'accès"],
+            ["Secret maître MLA", "Rien à fournir — généré au premier lancement", "Gestionnaire d'accès (Secure Enclave)"],
+            ["Phrase de récupération", "Rien — 12 mots affichés une seule fois", "Sur papier, hors de tout appareil"],
+        ],
+        [5.2 * cm, 6.3 * cm, 5 * cm]))
 
     # ============================ 4. UTILISATION
     f.append(NextPageTemplate("suite"))
