@@ -77,8 +77,10 @@ final class ServiceSynchronisationTests: XCTestCase {
 
     func testActivationBascule() async throws {
         let service = try service(active: false)
-        XCTAssertFalse(await service.estActive)
+        let inactive = await service.estActive
+        XCTAssertFalse(inactive)
         await service.definirActive(true)
-        XCTAssertTrue(await service.estActive)
+        let active = await service.estActive
+        XCTAssertTrue(active)
     }
 }
