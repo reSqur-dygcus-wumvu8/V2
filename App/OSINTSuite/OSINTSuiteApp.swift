@@ -68,6 +68,8 @@ final class EtatOSINTSuite: ObservableObject {
     @Published var message: String?
     @Published var scene: ScenePhase = .inactive
 
+    /// Phrase secrète saisie dans l'écran de déverrouillage (mode test sans compte développeur).
+    @Published var phraseSaisie = ""
     /// Moteur de stockage MLA ouvert après déverrouillage.
     private(set) var base: MoteurStockage?
     /// Client Tor embarqué : tout le trafic sortant passe par lui.
@@ -75,8 +77,6 @@ final class EtatOSINTSuite: ObservableObject {
     /// Mode découverte (pont Mistral via Tor) — construit après ouverture.
     private(set) var serviceDecouverte: ServiceDecouverte?
 
-    static let groupePartage = "fr.osintsuite.shared"
-    private let trousseauPartage = TrousseauSessionPartage(groupePartage: groupePartage)
 
     /// Dossier des archives MLA dans le conteneur applicatif.
     static func dossierMLA() -> URL {
@@ -84,82 +84,82 @@ final class EtatOSINTSuite: ObservableObject {
         return dossier.appendingPathComponent("archives-mla", isDirectory: true)
     }
 
-    /// Tente de déverrouiller les archives MLA avec la session du trousseau
-    /// partagé. Si la session est absente/expirée : passage par le
-    /// Gestionnaire d'accès.
+    /// Tente de déverrouiller les archives MLA avec la phrase secrète
+    /// saisie (mode test sans compte développeur : pas de trousseau partagé,
+    /// le secret maître MLA est saisi manuellement à chaque ouverture).
     func tenterOuverture() {
-        guard let session = try? trousseauPartage.lireSession() else {
-            message = "Session absente ou expirée : déverrouillez via le Gestionnaire d'accès."
-            deverrouillee = false
+        message = "Saisissez la phrase secrète MLA pour ouvrir la base chiffrée."
+        deverrouillee = false
+    }
+
+    /// Déverrouillage manuel : ouvre les archives avec la phrase saisie.
+    func deverrouillerAvecPhrase() {
+        guard !phraseSaisie.isEmpty else {
+            message = "Saisissez la phrase secrète MLA."
             return
         }
         do {
-            // Le matériel de clés de session déballe la phrase secrète MLA
-            // (stockée enveloppée dans le trousseau du service principal).
-            let keychain = KeychainStore()
-            guard let enveloppe = try keychain.lire(cle: "enveloppe-mla") else {
-                message = "Secret MLA non initialisé : initialisez le coffret dans le Gestionnaire d'accès."
-                return
-            }
-            let secret = try ModeleCles.deballer(
-                enveloppe: EnveloppeDEK(donnees: enveloppe),
-                kek: session.cle
-            )
-            let phraseSecrete = secret.withUnsafeBytes { Data($0).base64EncodedString() }
-            base = try MoteurStockage(dossier: Self.dossierMLA(), phraseSecrete: phraseSecrete)
-            // Client Tor : toute requête sortante passera par le proxy SOCKS5.
-            let clientTor = ClientTor()
-            let reseauTor = ReseauTor(client: clientTor)
-            self.reseau = reseauTor
-            Task { try? await reseauTor.preparer() }
-            // Mode découverte : le proxy Mistral est joint via Tor ; son URL
-            // et le token client vivent dans le Keychain (jamais en clair).
-            if let urlTexte = keychain.lireToString(cle: "url-proxy"),
-               let token = keychain.lireToString(cle: "token-proxy"),
-               let url = URL(string: urlTexte) {
-                serviceDecouverte = ServiceDecouverte(
-                    clientDecouverte: ClientDecouverteProxy(
-                        urlBase: url,
-                        token: token,
-                        reseau: reseauTor
-                    )
-                )
-            } else {
-                // Sans proxy configuré, le mode découverte répond un refus
-                // propre (le modèle affiche le message d'indisponibilité).
-                serviceDecouverte = ServiceDecouverte()
-            }
+            base = try MoteurStockage(dossier: Self.dossierMLA(), phraseSecrete: phraseSaisie)
+            ouvrirServices()
             deverrouillee = true
+            phraseSaisie = ""
         } catch {
             message = "Échec du déverrouillage : \(error.localizedDescription)"
             deverrouillee = false
         }
     }
 
-    /// Demande de déverrouillage : appelle l'App Intent du Gestionnaire
-    /// d'accès (interception par le compagnon, authentification biométrique,
-    /// publication de session dans le trousseau partagé).
-    func demanderDeverrouillage() {
-        Task {
-            // Appel de l'App Intent via le système (cible Xcode) ;
-            // puis nouvelle tentative d'ouverture.
-            tenterOuverture()
+    /// Initialisation première : génère une phrase secrète MLA, crée les
+    /// archives puis l'affiche une seule fois pour la noter hors appareil.
+    func initialiserBase() {
+        let phrase = ModeleCles.genererDEK()
+            .withUnsafeBytes { Data($0).base64EncodedString() }
+        do {
+            base = try MoteurStockage(dossier: Self.dossierMLA(), phraseSecrete: phrase)
+            ouvrirServices()
+            deverrouillee = true
+            message = "NOTER LA PHRASE SECRÈTE (affichée une seule fois) :\n\(phrase)"
+        } catch {
+            message = "Échec de l'initialisation : \(error.localizedDescription)"
         }
     }
 
-    /// Verrouillage : purge de la session au passage en arrière-plan,
-    /// consolidation des archives MLA puis fermeture du jeu de travail.
+    /// Construit les services réseau (Tor, découverte) après ouverture.
+    private func ouvrirServices() {
+        let keychain = KeychainStore()
+        let clientTor = ClientTor()
+        let reseauTor = ReseauTor(client: clientTor)
+        reseau = reseauTor
+        Task { try? await reseauTor.preparer() }
+        if let urlTexte = keychain.lireToString(cle: "url-proxy"),
+           let token = keychain.lireToString(cle: "token-proxy"),
+           let url = URL(string: urlTexte) {
+            serviceDecouverte = ServiceDecouverte(
+                clientDecouverte: ClientDecouverteProxy(
+                    urlBase: url,
+                    token: token,
+                    reseau: reseauTor
+                )
+            )
+        } else {
+            serviceDecouverte = ServiceDecouverte()
+        }
+    }
+
+
+    /// Verrouillage : consolidation des archives MLA puis fermeture du jeu
+    /// de travail (mode test : rien à purger, la phrase n'est jamais stockée).
     func verrouiller() {
-        trousseauPartage.purger()
         try? base?.consolider()
         base = nil
         reseau = nil
         deverrouillee = false
-        message = "Session purgée et archives consolidées (passage en arrière-plan)."
+        message = "Archives consolidées et base verrouillée (passage en arrière-plan)."
     }
 }
 
-/// Écran verrouillé : invitation à déverrouiller via le Gestionnaire d'accès.
+/// Écran verrouillé : saisie manuelle de la phrase secrète MLA (mode test
+/// sans compte développeur — pas de trousseau partagé entre applications).
 struct EcranVerrou: View {
     @ObservedObject var etat: EtatOSINTSuite
 
@@ -170,16 +170,27 @@ struct EcranVerrou: View {
                 .foregroundStyle(.tint)
             Text("Base verrouillée")
                 .font(.title2.bold())
-            Text(etat.message ?? "Déverrouillez via le Gestionnaire d'accès pour ouvrir la base chiffrée.")
+            Text(etat.message ?? "Saisissez la phrase secrète MLA pour ouvrir la base chiffrée.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button("Demander le déverrouillage") {
-                etat.demanderDeverrouillage()
+            SecureField("Phrase secrète MLA", text: $etat.phraseSaisie)
+                .textFieldStyle(.roundedBorder)
+            Button("Déverrouiller") {
+                etat.deverrouillerAvecPhrase()
             }
             .buttonStyle(.borderedProminent)
+            Divider()
+            Button("Première utilisation : créer la base") {
+                etat.initialiserBase()
+            }
+            .buttonStyle(.bordered)
+            Text("La phrase secrète n'est jamais stockée sur l'appareil. Sans elle, la base est définitivement illisible.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .padding(40)
-        .frame(maxWidth: 420)
+        .frame(maxWidth: 460)
     }
 }
