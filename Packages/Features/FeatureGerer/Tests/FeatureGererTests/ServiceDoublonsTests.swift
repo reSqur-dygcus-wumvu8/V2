@@ -85,9 +85,11 @@ final class ServiceDoublonsTests: XCTestCase {
         XCTAssertEqual(gardee.resume, "Biographie complète")
         // Les relations de l'absorbée sont transférées.
         XCTAssertEqual(entrepotEntite.relations(id: gardee.id).count, 1)
-        // L'absorbée est une tombstone (invisible, jamais effacée physiquement).
-        let fusionneeApres = try XCTUnwrap(entrepotEntite.chercher(id: fusionnee.id))
-        XCTAssertEqual(entrepotEntite.toutes().contains { $0.id == fusionneeApres.id }, false)
+        // L'absorbée est une tombstone : invisible via l'entrepôt public
+        // (chercher/toutes excluent les supprimées), jamais effacée
+        // physiquement dans le moteur.
+        XCTAssertNil(entrepotEntite.chercher(id: fusionnee.id))
+        XCTAssertEqual(entrepotEntite.toutes().contains { $0.id == fusionnee.id }, false)
         // La fusion est journalisée.
         let journal = entrepotDoublon.journalFusions()
         XCTAssertEqual(journal.count, 1)
