@@ -37,7 +37,7 @@ public struct VeillesView: View {
                         VStack(alignment: .leading) {
                             Text(entree.date, style: .date)
                             Text(entree.message).font(.caption)
-                                .foregroundStyle(entree.succes ? .secondary : .red)
+                                .foregroundStyle(entree.succes ? Color.secondary : Color.red)
                         }
                     }
                 }
