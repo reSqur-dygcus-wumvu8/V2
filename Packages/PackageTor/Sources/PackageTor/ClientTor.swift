@@ -137,15 +137,15 @@ public enum BackendFFI_Arti {
 
 func arti_client_start(_ port: UInt16) -> Int32 {
     typealias Signature = @convention(c) (UInt16) -> Int32
-    guard let brut = LiaisonFFI.symbole("arti_client_start"),
-          let fonction = unsafeBitCast(brut, to: Signature.self) else { return -1 }
+    guard let brut = LiaisonFFI.symbole("arti_client_start") else { return -1 }
+    let fonction = unsafeBitCast(brut, to: Signature.self)
     return fonction(port)
 }
 
 func arti_client_stop() {
     typealias Signature = @convention(c) () -> Void
-    guard let brut = LiaisonFFI.symbole("arti_client_stop"),
-          let fonction = unsafeBitCast(brut, to: Signature.self) else { return }
+    guard let brut = LiaisonFFI.symbole("arti_client_stop") else { return }
+    let fonction = unsafeBitCast(brut, to: Signature.self)
     fonction()
 }
 
@@ -159,14 +159,14 @@ public enum BackendFFI_torC {
 
 func torc_client_start(_ port: UInt16, _ pays: UnsafePointer<CChar>) -> Int32 {
     typealias Signature = @convention(c) (UInt16, UnsafePointer<CChar>) -> Int32
-    guard let brut = LiaisonFFI.symbole("torc_client_start"),
-          let fonction = unsafeBitCast(brut, to: Signature.self) else { return -1 }
+    guard let brut = LiaisonFFI.symbole("torc_client_start") else { return -1 }
+    let fonction = unsafeBitCast(brut, to: Signature.self)
     return fonction(port, pays)
 }
 
 func torc_client_stop() {
     typealias Signature = @convention(c) () -> Void
-    guard let brut = LiaisonFFI.symbole("torc_client_stop"),
-          let fonction = unsafeBitCast(brut, to: Signature.self) else { return }
+    guard let brut = LiaisonFFI.symbole("torc_client_stop") else { return }
+    let fonction = unsafeBitCast(brut, to: Signature.self)
     fonction()
 }
