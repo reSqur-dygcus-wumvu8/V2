@@ -60,9 +60,10 @@ final class StockageMLATests: XCTestCase {
     func testFichierAuReposIllisibleSansCle() throws {
         let archive = try archive()
         try archive.ecrire(Data("données sensibles".utf8), segment: "entites")
-        // Le fichier brut n'est pas en clair sur le disque.
+        // Le fichier brut n'est pas en clair sur le disque : soit illisible
+        // en UTF-8 (chiffré), soit lisible mais sans le contenu en clair.
         let brut = try Data(contentsOf: dossier.appendingPathComponent("entites.mla"))
-        XCTAssertFalse(String(data: brut, encoding: .utf8)?.contains("sensibles") ?? true)
+        XCTAssertFalse(String(data: brut, encoding: .utf8)?.contains("sensibles") ?? false)
     }
 
     func testSelArchivePersisteEtEstReutilise() throws {
