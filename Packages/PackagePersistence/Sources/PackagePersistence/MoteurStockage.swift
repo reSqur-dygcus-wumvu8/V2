@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import PackageDomain
 import PackageMLA
@@ -10,7 +11,7 @@ import PackageMLA
 /// consolider() à chaque mise en arrière-plan / fermeture.
 /// Aucune donnée n'est jamais déchiffrée sur disque : les archives MLA
 /// sont déchiffrées en mémoire uniquement.
-public final class MoteurStockage: @unchecked Sendable {
+public final class MoteurStockage: ObservableObject, @unchecked Sendable {
 
     // MARK: - Segments d'archive
 
