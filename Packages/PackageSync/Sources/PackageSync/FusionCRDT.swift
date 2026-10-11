@@ -30,7 +30,7 @@ public struct FusionCRDT: Sendable {
     public func texteCourant(etat: Data) throws -> String {
         let document = try Document(etat)
         guard let valeur = try document.get(obj: ObjId.ROOT, key: "contenu"),
-              case .Object(let objet) = valeur else {
+              case .Object(let objet, _) = valeur else {
             return ""
         }
         return try document.text(obj: objet)
@@ -40,7 +40,7 @@ public struct FusionCRDT: Sendable {
     public func appliquerModification(etat: inout Data, texte: String) throws {
         let document = try Document(etat)
         if let valeur = try document.get(obj: ObjId.ROOT, key: "contenu"),
-           case .Object(let objet) = valeur {
+           case .Object(let objet, _) = valeur {
             try document.updateText(obj: objet, value: texte)
         } else {
             let objet = try document.putObject(obj: ObjId.ROOT, key: "contenu", ty: .Text)
