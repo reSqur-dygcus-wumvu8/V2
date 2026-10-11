@@ -64,13 +64,13 @@ final class ConnecteurTelegramTests: XCTestCase {
 final class ConnecteurXTests: XCTestCase {
 
     func testInstanceNitterParDefaut() {
-        let connecteur = ConnecteurX()
+        let connecteur = ConnecteurX(reseau: ReseauTor(client: ClientTor()))
         XCTAssertEqual(connecteur.plateforme, .xTwitter)
         XCTAssertEqual(connecteur.instanceNitter, "https://nitter.net")
     }
 
     func testInstancePersonnalisee() {
-        let connecteur = ConnecteurX(instanceNitter: "https://nitter.example.org")
+        let connecteur = ConnecteurX(instanceNitter: "https://nitter.example.org", reseau: ReseauTor(client: ClientTor()))
         XCTAssertEqual(connecteur.instanceNitter, "https://nitter.example.org")
     }
 }
