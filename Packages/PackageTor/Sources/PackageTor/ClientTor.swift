@@ -1,4 +1,5 @@
 import Foundation
+import CFNetwork
 
 /// État du client Tor embarqué.
 public enum EtatTor: String, Sendable, Equatable {
@@ -57,7 +58,10 @@ public final class ClientTor: @unchecked Sendable {
                 return false
             }
             etatInterne = .demarrage
-            let code = torc_client_start(configuration.portSOCKS5, pays)
+            var code: Int32 = -1
+            pays.withCString { pointeur in
+                code = torc_client_start(configuration.portSOCKS5, pointeur)
+            }
             etatInterne = code == 0 ? .connecte : .erreur
             return code == 0
         }
@@ -75,6 +79,9 @@ public final class ClientTor: @unchecked Sendable {
     public func arreter() {
         if BackendFFI_Arti.estDisponible {
             arti_client_stop()
+        }
+        if BackendFFI_torC.estDisponible {
+            torc_client_stop()
         }
         etatInterne = .arrete
     }
@@ -124,3 +131,17 @@ public enum BackendFFI_Arti {
 func arti_client_start(_ port: UInt16) -> Int32
 @_silgen_name("arti_client_stop")
 func arti_client_stop()
+
+/// FFI vers tor C (crate libtor compilée en xcframework —
+/// scripts/build-xcframeworks.sh, cible torc.xcframework). Symboles
+/// déclarés ici, liés à l'ajout du xcframework au projet Xcode.
+public enum BackendFFI_torC {
+    public static var estDisponible: Bool {
+        dlsym(UnsafeMutableRawPointer(bitPattern: 0), "torc_client_start") != nil
+    }
+}
+
+@_silgen_name("torc_client_start")
+func torc_client_start(_ port: UInt16, _ pays: UnsafePointer<CChar>) -> Int32
+@_silgen_name("torc_client_stop")
+func torc_client_stop()
