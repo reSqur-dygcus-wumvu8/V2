@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
 import CryptoKit
 import PackageAcces
 
@@ -31,6 +34,15 @@ final class EtatGestionnaireAcces: ObservableObject {
     /// Groupe trousseau partagé — à renseigner avec le Team ID réel
     /// (ex. "XXXXXXXXXX.fr.osintsuite.shared") dans les entitlements.
     static let groupePartage = "fr.osintsuite.shared"
+
+    /// Dénomination locale de l'appareil (multiplateforme).
+    static var nomAppareil: String {
+        #if canImport(AppKit)
+        Host.current().localizedName ?? "Mac"
+        #else
+        ProcessInfo.processInfo.hostName
+        #endif
+    }
 
     let coffret: CoffreCles
     let fournisseurKEK: FournisseurKEKSecureEnclave
@@ -125,7 +137,7 @@ struct AccueilGestionnaireView: View {
                     Button("Autoriser cet appareil…") {
                         Task {
                             await etat.autoriser(
-                                AppareilAutorise(nom: Host.current().localizedName ?? "Mac", profil: .complet)
+                                AppareilAutorise(nom: Self.nomAppareil, profil: .complet)
                             )
                         }
                     }

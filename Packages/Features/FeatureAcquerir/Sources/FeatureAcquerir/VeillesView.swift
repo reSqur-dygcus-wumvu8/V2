@@ -27,8 +27,10 @@ public struct VeillesView: View {
                         Toggle("", isOn: bindingActivation(veille)).labelsHidden()
                     }
                 }
-                .onDelete { index in
-                    modele.supprimer(at: index)
+                .onDelete { indexSet in
+                    for index in indexSet {
+                        modele.supprimer(at: index)
+                    }
                 }
             }
             if let selection = modele.veilleSelectionnee {
@@ -180,7 +182,7 @@ public final class ModeleVeilles: ObservableObject {
 
     /// Recharge les veilles depuis la base.
     public func charger() {
-        veilles = (try? entrepotVeille.toutes()) ?? []
+        veilles = entrepotVeille.toutes()
     }
 
     /// Nouvelle veille vierge ouverte en édition.
@@ -190,7 +192,7 @@ public final class ModeleVeilles: ObservableObject {
 
     /// Enregistre la veille éditée.
     public func enregistrer(_ veille: Veille) {
-        try? entrepotVeille.enregistrer(veille)
+        entrepotVeille.enregistrer(veille)
         charger()
         veilleEditee = nil
     }
@@ -199,33 +201,33 @@ public final class ModeleVeilles: ObservableObject {
     public func activer(_ veille: Veille, actif: Bool) {
         var modifiee = veille
         modifiee.active = actif
-        try? entrepotVeille.enregistrer(modifiee)
+        entrepotVeille.enregistrer(modifiee)
         charger()
     }
 
     /// Supprime une veille par index.
     public func supprimer(at index: Int) {
         guard veilles.indices.contains(index) else { return }
-        try? entrepotVeille.supprimer(veilles[index].id)
+        entrepotVeille.supprimer(veilles[index].id)
         charger()
     }
 
     /// Sélectionne une veille et charge son journal.
     public func selectionner(_ veille: Veille) {
         veilleSelectionnee = veille
-        journal = (try? entrepotVeille.journal(veilleId: veille.id)) ?? []
+        journal = entrepotVeille.journal(veilleId: veille.id)
     }
 
     /// Exécute toutes les veilles actives (Mac hub ou rafraîchissement manuel).
     public func executerToutes() async {
-        let actives = (try? entrepotVeille.actives()) ?? []
+        let actives = entrepotVeille.actives()
         for veille in actives {
-            let hashes = (try? entrepotElements.hashesVus(veilleId: veille.id)) ?? []
+            let hashes = entrepotElements.hashesVus(veilleId: veille.id)
             let resultat = await orchestrateur.executer(veille: veille, hashesVus: hashes)
-            let inseres = (try? entrepotElements.insererNouveaux(resultat.nouveauxElements)) ?? []
+            let inseres = entrepotElements.insererNouveaux(resultat.nouveauxElements)
             // Alerte locale si un nouvel élément atteint le seuil de priorité.
             await serviceAlertes.evaluer(elements: inseres, veille: veille)
-            try? entrepotVeille.journaliser(
+            entrepotVeille.journaliser(
                 ResultatJournal(
                     veilleId: veille.id,
                     date: resultat.date,

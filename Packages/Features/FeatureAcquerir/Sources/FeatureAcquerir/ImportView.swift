@@ -53,9 +53,20 @@ public struct ImportView: View {
             donneesFichier = donnees
             return true
         }
+        .fileImporter(isPresented: $selectionFichierPresentee, allowedContentTypes: [.data]) { resultat in
+            switch resultat {
+            case .success(let url):
+                chargerFichier(url: url)
+            case .failure(let erreur):
+                modele.message = "Sélection impossible : \(erreur.localizedDescription)"
+            }
+        }
     }
 
+    @State private var selectionFichierPresentee = false
+
     private func choisirFichier() {
+        #if canImport(AppKit)
         let panneau = NSOpenPanel()
         panneau.allowsMultipleSelection = false
         panneau.canChooseDirectories = false
@@ -63,6 +74,9 @@ public struct ImportView: View {
         if panneau.runModal() == .OK, let url = panneau.url {
             chargerFichier(url: url)
         }
+        #else
+        selectionFichierPresentee = true
+        #endif
     }
 
     private func chargerFichier(url: URL) {
@@ -81,7 +95,6 @@ public struct ImportView: View {
 
 #if canImport(AppKit)
 import AppKit
-typealias NSOpenPanel = NSOpenPanel
 #endif
 
 /// Modèle de vue de l'import (MVVM), testable sans interface graphique.
