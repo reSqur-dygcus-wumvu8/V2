@@ -265,21 +265,49 @@ def contenu():
     P("<b>Ce que vous devez voir :</b> un dossier nommé <b>V2</b> dans "
       "Documents, contenant notamment project.yml, Packages et App.", "corps")
 
-    P("2.6 Étape 4 — Trouver votre Team ID", "h2")
-    puce("<b>1.</b> Ouvrez Safari sur le site développeur d'Apple, bouton "
-         "<b>Account</b>, connectez-vous avec votre identifiant Apple ;")
-    puce("<b>2.</b> Cliquez sur votre nom en haut à droite puis <b>View "
-         "Account</b> ;")
-    puce("<b>3.</b> Cherchez la ligne <b>Team ID</b> : 10 caractères, par "
-         "exemple AB12CD34EF ;")
-    puce("<b>4.</b> Notez-le sur papier ou dans l'app Notes — vous en aurez "
+    P("2.6 Étape 4 — Trouver votre Team ID (gratuit, 5 minutes)", "h2")
+    P("<b>Bon à savoir :</b> un Team ID existe même avec un compte Apple "
+      "<b>gratuit</b> (on l'appelle alors « Personal Team »). Vous n'avez "
+      "pas besoin du programme payant (99 $/an) pour l'obtenir — seulement "
+      "de votre identifiant Apple habituel (celui de l'App Store).", "corps")
+    P("<b>Méthode A (la plus simple) — dans Xcode :</b>", "h2")
+    puce("<b>1.</b> Ouvrez <b>Xcode</b> ;")
+    puce("<b>2.</b> Menu <b>Xcode &gt; Settings…</b> (ou le raccourci "
+         "<b>Cmd+,</b>) ;")
+    puce("<b>3.</b> Cliquez sur l'onglet <b>Accounts</b> en haut ;")
+    puce("<b>4.</b> Si la liste est vide : bouton <b>+</b> en bas → "
+         "<b>Apple ID</b> → connectez-vous avec votre identifiant Apple "
+         "habituel (identifiant + mot de passe, code de vérification sur "
+         "votre iPhone) ;")
+    puce("<b>5.</b> Cliquez sur votre compte dans la liste : en bas à droite, "
+         "la zone <b>Team</b> affiche une ligne du type « Votre Nom "
+         "(Personal Team) » suivie du code à 10 caractères — "
+         "par exemple <b>AB12CD34EF</b>. C'est votre Team ID ;")
+    puce("<b>6.</b> Notez-le sur papier ou dans l'app Notes — vous en aurez "
          "besoin à l'étape suivante.")
+    P("<b>Méthode B — sur le site d'Apple :</b>", "h2")
+    puce("<b>1.</b> Ouvrez Safari sur <b>developer.apple.com/account</b> ;")
+    puce("<b>2.</b> Connectez-vous avec votre identifiant Apple (même "
+         "gratuit) ;")
+    puce("<b>3.</b> La page affiche <b>Membership details</b> : la ligne "
+         "<b>Team ID</b> contient vos 10 caractères.")
     espace(4)
     f.append(bloc_note(
-        "Le compte développeur payant (99 $/an) est indispensable pour "
-        "installer les applications sur iPhone/iPad et pour le partage de "
-        "trousseau entre les deux apps. Sans compte payant, vous pourrez "
-        "toujours lancer l'app sur votre Mac et sur le simulateur.", "note"))
+        "Je n'ai AUCUN compte et je ne veux rien créer : dans ce cas "
+        "laissez le Team ID de côté, passez directement au §2.16 "
+        "(simulateur). Le simulateur ne demande ni compte ni signature : "
+        "c'est la voie 100 % gratuite et 100 % immédiate. Vous "
+        "complèterez le Team ID plus tard si vous voulez aller sur "
+        "appareil réel.", "note"))
+    f.append(bloc_note(
+        "Le compte développeur payant (99 $/an) reste indispensable pour "
+        "installer les applications sur un iPhone/iPad réel et pour le "
+        "partage de trousseau entre les deux apps. Avec un compte gratuit, "
+        "le Team ID suffit pour la signature Mac et le simulateur ; en "
+        "revanche Apple refuse de délivrer les capacités « App "
+        "Groups / Keychain Sharing » aux comptes gratuits : si la "
+        "signature Mac échoue avec ces capacités, utilisez le "
+        "simulateur (§2.16) ou passez au compte payant.", "avertissement"))
 
     P("2.7 Étape 5 — Mettre votre Team ID dans le fichier project.yml", "h2")
     puce("<b>1.</b> Dans le dossier <b>V2</b> (Documents), double-cliquez sur "
