@@ -374,6 +374,39 @@ def contenu():
       "l'OSINT Suite. Le bouton « Demander le déverrouillage » bascule vers "
       "le Gestionnaire d'accès : la chaîne complète fonctionne.", "corps")
 
+    P("Variante — construire et lancer sans ouvrir Xcode (Terminal seul)", "h2")
+    P("Vous ne voulez jamais ouvrir la fenêtre de Xcode ? C'est possible : "
+      "Xcode doit être <b>installé</b> sur le Mac (le compilateur et "
+      "l'outil xcodebuild en font partie), mais vous pilotez tout depuis le "
+      "Terminal. Quatre commandes suffisent, à taper après les étapes "
+      "2.4 à 2.8 (outils installés, code récupéré, Team ID dans "
+      "project.yml, projet généré) :", "corps")
+    puce("<b>1.</b> Placez-vous dans le dossier du projet :")
+    code("cd ~/Documents/V2")
+    puce("<b>2.</b> Fabriquez l'application macOS (sans signature — "
+         "suffisant pour lancer sur votre propre Mac) :")
+    code("xcodebuild -scheme OSINTSuite-macOS -configuration Debug \\\n"
+         "  -derivedDataPath build CODE_SIGNING_ALLOWED=NO build")
+    puce("<b>3.</b> <b>Ce que vous devez voir :</b> la dernière ligne "
+         "affiche <b>** BUILD SUCCEEDED **</b> — patientez quelques minutes "
+         "la première fois (téléchargement des composants).")
+    puce("<b>4.</b> Lancez l'application :")
+    code("open build/Build/Products/Debug/OSINTSuite.app")
+    puce("<b>5.</b> La première fois, macOS peut signaler « développeur "
+         "non identifié » : clic droit sur l'icône de l'app &gt; "
+         "<b>Ouvrir</b>.")
+    espace(4)
+    f.append(bloc_note(
+        "Limites de cette variante : (1) l'app n'est pas signée, donc le "
+        "partage de trousseau avec le Gestionnaire d'accès peut être "
+        "refusé par macOS — pour la chaîne complète de "
+        "déverrouillage, la signature via Xcode (§2.9) ou un compte payant "
+        "reste nécessaire ; (2) cette variante construit la cible macOS ; "
+        "pour iOS, le simulateur reste la voie gratuite (§2.16) ; (3) si "
+        "xcodebuild affiche « xcode-select: error », collez d'abord : "
+        "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer", "avertissement"))
+    espace(6)
+
     P("2.11 Ça ne marche pas ? Les 6 pannes classiques", "h2")
     f.append(tableau_entetes(
         ["Message / symptôme", "Solution"],
