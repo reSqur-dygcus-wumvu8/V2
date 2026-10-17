@@ -178,7 +178,55 @@ def contenu():
       "les boutons Choose a project / Create a new project. Vous pouvez la "
       "fermer.", "corps")
 
-    P("2.3 Étape 2 — Ouvrir le Terminal et installer les petits outils", "h2")
+    P("2.3 Découverte de Xcode — la fenêtre et les boutons (10 minutes)", "h2")
+    P("Avant de continuer, prenez 10 minutes pour apprivoiser Xcode : "
+      "les étapes suivantes l'utilisent sans explication. Rien à "
+      "modifier ici — juste repérer les zones décrites ci-dessous.", "corps")
+    f.append(tableau_entetes(
+        ["Zone de Xcode", "Où c'est, à quoi ça sert"],
+        [
+            ["<b>Barre de titre</b> (tout en haut)",
+             "Affiche le nom du projet ouvert. À droite : le menu déroulant du <b>schéma</b> (quelle app on fabrique) puis la <b>destination</b> (sur quelle machine on la lance : My Mac, iPhone…)."],
+            ["<b>Bouton ▶ (triangle)</b>",
+             "À côté du schéma. C'est le bouton <b>Lancer</b> : il compile puis démarre l'application. Le carré ■ stoppe l'app lancée. Raccourci : <b>Cmd+R</b> pour lancer, <b>Cmd+.</b> pour arrêter."],
+            ["<b>Navigateur</b> (colonne de gauche)",
+             "La liste des fichiers du projet. Les 3 petites icônes en haut de la colonne changent l'affichage : <b>dossier</b> = fichiers ; <b>rapport</b> (⌘+Cmd) = résultats des builds ; <b>warning</b> = problèmes."],
+            ["<b>Zone centrale</b> (éditeur)",
+             "Affiche le fichier sélectionné — du code, ou les réglages quand on clique sur le projet en haut du navigateur."],
+            ["<b>Onglet Signing &amp; Capabilities</b>",
+             "Après avoir cliqué sur une cible (TARGETS) : c'est lé que l'on choisit son <b>Team</b> (signature automatique). C'est la seule zone de réglage utilisée par ce guide."],
+            ["<b>Bas de fenêtre</b>",
+             "Pendant une compilation : une barre de progression et des messages. <b>Si une ligne rouge apparaît : le build a échoué</b> — cliquez dessus pour voir l'erreur en détail."],
+        ],
+        [4.2 * cm, 12.3 * cm]))
+    espace(6)
+    P("<b>Vocabulaire Xcode utilisé dans la suite du guide :</b>", "h2")
+    f.append(tableau_entetes(
+        ["Terme", "Signification simple"],
+        [
+            ["<b>Compiler (build)</b>",
+             "Transformer le code en application. Xcode vérifie au passage toutes les erreurs. Raccourci : <b>Cmd+B</b> (compiler sans lancer)."],
+            ["<b>Cible (target)</b>",
+             "Une application à fabriquer. Ce projet en contient cinq : OSINTSuite-macOS, OSINTSuite-iOS, AccessManager-macOS, AccessManager-iOS, Collecteur."],
+            ["<b>Schéma (scheme)</b>",
+             "Le menu déroulant qui dit « quelle cible on lance avec ▶ ». On le change souvent : AccessManager d'abord, puis OSINTSuite."],
+            ["<b>Simulateur</b>",
+             "Un iPhone/iPad virtuel affiché dans une fenêtre du Mac : gratuit, parfait pour découvrir sans compte payant (§2.16)."],
+            ["<b>Build succeeded / failed</b>",
+             "Le message final de la compilation : « succeeded » = tout est bon ; « failed » = il y a une erreur (souvent la signature)."],
+            ["<b>Entitlements</b>",
+             "Les autorisations spéciales demandées à Apple (partage de trousseau…). Déjà configurées dans ce projet : rien à faire."],
+        ],
+        [4.2 * cm, 12.3 * cm]))
+    espace(4)
+    f.append(bloc_note(
+        "Trois réflexes à garder en tête : (1) lire la <b>zone en bas</b> de Xcode "
+        "après chaque action ; (2) en cas d'erreur rouge, la <b>sélectionner</b> pour "
+        "lire le message complet ; (3) en cas de doute : menu <b>Product &gt; Clean "
+        "Build Folder</b> (Maj+Cmd+K) puis relancer — cela résout la moitié des "
+        "« fausses » erreurs.", "note"))
+
+    P("2.4 Étape 2 — Ouvrir le Terminal et installer les petits outils", "h2")
     P("XcodeGen ne s'installe pas par glisser-déposer : on passe par le "
       "Terminal. Rien de compliqué : trois copier-coller.", "corps")
     puce("<b>1.</b> Ouvrez le Terminal (Cmd+Espace, tapez « Terminal », "
@@ -199,7 +247,7 @@ def contenu():
       "pourcentages, puis la ligne avec le <b>$</b> revient sans message "
       "d'erreur.", "corps")
 
-    P("2.4 Étape 3 — Récupérer le code de l'application", "h2")
+    P("2.5 Étape 3 — Récupérer le code de l'application", "h2")
     P("Deux méthodes : la méthode A se fait uniquement à la souris — "
       "commencez par elle.", "corps")
     P("<b>Méthode A (recommandée pour débuter) — à la souris :</b>", "h2")
@@ -217,7 +265,7 @@ def contenu():
     P("<b>Ce que vous devez voir :</b> un dossier nommé <b>V2</b> dans "
       "Documents, contenant notamment project.yml, Packages et App.", "corps")
 
-    P("2.5 Étape 4 — Trouver votre Team ID", "h2")
+    P("2.6 Étape 4 — Trouver votre Team ID", "h2")
     puce("<b>1.</b> Ouvrez Safari sur le site développeur d'Apple, bouton "
          "<b>Account</b>, connectez-vous avec votre identifiant Apple ;")
     puce("<b>2.</b> Cliquez sur votre nom en haut à droite puis <b>View "
@@ -233,7 +281,7 @@ def contenu():
         "trousseau entre les deux apps. Sans compte payant, vous pourrez "
         "toujours lancer l'app sur votre Mac et sur le simulateur.", "note"))
 
-    P("2.6 Étape 5 — Mettre votre Team ID dans le fichier project.yml", "h2")
+    P("2.7 Étape 5 — Mettre votre Team ID dans le fichier project.yml", "h2")
     puce("<b>1.</b> Dans le dossier <b>V2</b> (Documents), double-cliquez sur "
          "le fichier <b>project.yml</b> : il s'ouvre dans TextEdit ;")
     puce("<b>2.</b> IMPORTANT : dans TextEdit, menu <b>Format &gt; Convertir "
@@ -249,7 +297,7 @@ def contenu():
       "« fr.osintsuite.shared » sont précédées de votre Team ID, et il ne "
       "reste aucun <b>__TEAM_ID__</b> dans le fichier.", "corps")
 
-    P("2.7 Étape 6 — Fabriquer le projet Xcode", "h2")
+    P("2.8 Étape 6 — Fabriquer le projet Xcode", "h2")
     puce("<b>1.</b> Retournez dans le <b>Terminal</b> ;")
     puce("<b>2.</b> Tapez <b>cd&nbsp;</b> (cd suivi d'un espace, sans "
          "valider), puis glissez-déposez le dossier <b>V2</b> depuis le "
@@ -262,7 +310,7 @@ def contenu():
       "« Created project at .../OSINTSuite.xcodeproj » et un nouveau fichier "
       "<b>OSINTSuite.xcodeproj</b> est apparu dans le dossier V2.", "corps")
 
-    P("2.8 Étape 7 — Ouvrir le projet et activer la signature", "h2")
+    P("2.9 Étape 7 — Ouvrir le projet et activer la signature", "h2")
     puce("<b>1.</b> Double-cliquez sur <b>OSINTSuite.xcodeproj</b> : Xcode "
          "s'ouvre et télécharge les composants (la première fois, patientez) ;")
     puce("<b>2.</b> Dans la colonne de gauche, cliquez sur l'icône en forme "
@@ -280,7 +328,7 @@ def contenu():
       "au pire un triangle jaune sur la cible Collecteur (outil macOS sans "
       "impact sur les apps).", "corps")
 
-    P("2.9 Étape 8 — Lancer les applications sur le Mac", "h2")
+    P("2.10 Étape 8 — Lancer les applications sur le Mac", "h2")
     puce("<b>1.</b> En haut de Xcode, cliquez sur le menu déroulant à côté de "
          "« OSINTSuite » (le <b>schéma</b>) : choisissez "
          "<b>AccessManager-macOS</b> ;")
@@ -298,7 +346,7 @@ def contenu():
       "l'OSINT Suite. Le bouton « Demander le déverrouillage » bascule vers "
       "le Gestionnaire d'accès : la chaîne complète fonctionne.", "corps")
 
-    P("2.10 Ça ne marche pas ? Les 6 pannes classiques", "h2")
+    P("2.11 Ça ne marche pas ? Les 6 pannes classiques", "h2")
     f.append(tableau_entetes(
         ["Message / symptôme", "Solution"],
         [
@@ -308,6 +356,9 @@ def contenu():
              "Xcode n'est pas désigné comme outil par défaut : ouvrez Xcode une fois (étape 2.2), ou collez : sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"],
             ["Pas de nom dans le menu Team",
              "Xcode n'a pas encore récupéré votre compte : Xcode &gt; Settings &gt; Accounts &gt; sélectionnez votre compte &gt; Download Manual Profiles, puis rouvrez le menu Team."],
+                        ["« No profiles for fr.osintsuite.app » / « No profiles ... were found »",
+             "Xcode ne trouve pas de profil de signature pour le compte utilisé (compte gratuit, équipe non choisie, ou App ID déjà pris par un autre développeur)",
+             "1) Signing &amp; Capabilities : vérifier que le menu <b>Team</b> est rempli sur chaque cible ; 2) compte gratuit : passer par le simulateur (§2.16) ; 3) bundle ID déjà pris : remplacer fr.osintsuite.app par fr.osintsuite.app.votrenom (idem .acces) ; 4) dernier recours : Product &gt; Clean Build Folder puis redémarrer Xcode."],
             ["« Signing ... failed » ou bundle ID en conflit",
              "Un autre développeur utilise fr.osintsuite.app : dans Signing &amp; Capabilities, remplacez le Bundle Identifier par fr.osintsuite.app.votrenom (faites-le aussi pour .acces)."],
             ["project.yml plein de gras ou de couleurs",
@@ -321,7 +372,7 @@ def contenu():
       "GitHub en copiant le message d'erreur complet (et son numéro de "
       "ligne), la correction sera apportée rapidement.", "corps")
 
-    P("2.11 Installation sur iPhone et iPad", "h2")
+    P("2.12 Installation sur iPhone et iPad", "h2")
     P("Deux méthodes selon votre usage :", "corps")
     P("<b>Méthode A — Développement direct (câble, compte gratuit ou payant)</b>", "corps")
     puce("Connectez l'iPhone/iPad au Mac par câble ;")
@@ -344,7 +395,7 @@ def contenu():
     puce("Renouvelez l'opération pour le <b>AccessManager</b> (les deux apps "
          "doivent être installées sur l'appareil pour le déverrouillage).")
     espace(6)
-    P("2.12 Spécificités iPhone/iPad", "h2")
+    P("2.13 Spécificités iPhone/iPad", "h2")
     f.append(tableau_entetes(
         ["Sujet", "Comportement sur iPhone/iPad"],
         [
@@ -357,7 +408,7 @@ def contenu():
         ],
         [4.5 * cm, 12 * cm]))
     espace(6)
-    P("2.13 (Optionnel) Vérifier que tout est bon : les tests automatiques", "h2")
+    P("2.14 (Optionnel) Vérifier que tout est bon : les tests automatiques", "h2")
     P("Si vous souhaitez vérifier le code avant de lancer (optionnel) :", "corps")
     code("for p in Packages/PackageDomain Packages/PackageMLA Packages/PackageTor \\\n"
          "        Packages/PackagePersistence Packages/PackageNetworking \\\n"
@@ -367,7 +418,7 @@ def contenu():
       "« TEST SUCCEEDED » en vert. Un « TEST FAILED » rouge : copiez le "
       "message pour le ticket.", "corps")
 
-    P("2.14 Option 2 — Installer sans Xcode sur le Mac (GitHub + TestFlight)", "h1")
+    P("2.15 Option 2 — Installer sans Xcode sur le Mac (GitHub + TestFlight)", "h1")
     f.append(bloc_note(
         "Cette variante compile l'application sur les machines de GitHub (Xcode "
         "y est déjà installé) et la publie sur TestFlight : vous n'installez "
@@ -516,7 +567,7 @@ def contenu():
         [5.5 * cm, 11 * cm]))
 
 
-    P("2.15 Tester sans compte développeur payant — le simulateur", "h1")
+    P("2.16 Tester sans compte développeur payant — le simulateur", "h1")
     f.append(bloc_note(
         "Vous pouvez découvrir et utiliser l'application à 100 % sans compte "
         "Apple Developer payant, sur un iPhone et un iPad VIRTUELS (le "
