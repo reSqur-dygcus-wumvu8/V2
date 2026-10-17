@@ -1,6 +1,7 @@
 import SwiftUI
 import PackageDomain
 import PackagePersistence
+import PackageIntelligence
 
 /// File d'attente de la veille : éléments non traités, sélection multiple,
 /// regroupement en événement avec cotation assistée.
@@ -77,7 +78,7 @@ public final class ModeleFileAttente: ObservableObject {
 
     /// Charge les éléments non traités.
     public func charger() {
-        elements = (try? service.entrepotElements.fileAttente()) ?? []
+        elements = service.entrepotElements.fileAttente()
     }
 
     /// Bascule la sélection d'un élément.

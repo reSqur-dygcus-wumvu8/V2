@@ -124,3 +124,16 @@ public enum BackendFFI_Arti {
 func arti_client_start(_ port: UInt16) -> Int32
 @_silgen_name("arti_client_stop")
 func arti_client_stop()
+
+/// FFI vers tor C (sortie pays restreinte, via libtor —
+/// scripts/build-tor-xcframework.sh). Symboles déclarés ici, liés à
+/// l'ajout du xcframework au projet Xcode.
+public enum BackendFFI_torC {
+
+    public static var estDisponible: Bool {
+        dlsym(UnsafeMutableRawPointer(bitPattern: 0), "torc_client_start") != nil
+    }
+}
+
+@_silgen_name("torc_client_start")
+func torc_client_start(_ port: UInt16, _ pays: String) -> Int32

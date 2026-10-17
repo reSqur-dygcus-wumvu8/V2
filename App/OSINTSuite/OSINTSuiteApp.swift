@@ -48,7 +48,7 @@ struct EcranRacine: View {
     var body: some View {
         Group {
             if etat.deverrouillee, let base = etat.base {
-                AccueilView().environmentObject(base)
+                AccueilView()
             } else {
                 EcranVerrou(etat: etat)
             }

@@ -478,3 +478,15 @@ public struct SourceInfo: Codable, Sendable, Equatable, Identifiable {
         self.createdAt = createdAt
     }
 }
+
+/// Validation des adresses IPv4 saisies dans les fiches de lieu numérique.
+extension Entite {
+
+    /// Une chaîne est-elle une adresse IPv4 valide (4 octets 0–255) ?
+    public static func adresseIPValide(_ texte: String) -> Bool {
+        let octets = texte.split(separator: ".").compactMap { Int($0) }
+        guard octets.count == 4,
+              texte.split(separator: ".").count == 4 else { return false }
+        return octets.allSatisfy { (0...255).contains($0) }
+    }
+}

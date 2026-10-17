@@ -83,20 +83,20 @@ public final class ModeleDoublons: ObservableObject {
     /// Charge propositions et journal, puis relance une passe de détection.
     public func charger() {
         try? service.detecterDoublonsEntites()
-        propositions = (try? entrepotDoublon.enAttente()) ?? []
-        fusions = (try? entrepotDoublon.journalFusions()) ?? []
+        propositions = entrepotDoublon.enAttente()
+        fusions = entrepotDoublon.journalFusions()
     }
 
     /// Dénomination d'une entité par identifiant (affichage).
     public func denomination(id: UUID) -> String {
-        (try? entrepotEntite.chercher(id: id))?.denomination ?? "Inconnu"
+        entrepotEntite.chercher(id: id)?.denomination ?? "Inconnu"
     }
 
     /// Validation explicite : fusion assistée — les champs non vides de
     /// l'absorbée complètent la conservée.
     public func valider(_ proposition: PropositionDoublon) {
-        guard let a = try? entrepotEntite.chercher(id: proposition.idA),
-              let b = try? entrepotEntite.chercher(id: proposition.idB) else { return }
+        guard let a = entrepotEntite.chercher(id: proposition.idA),
+              let b = entrepotEntite.chercher(id: proposition.idB) else { return }
         // Fusion assistée simple : l'entité A est conservée, les champs non
         // vides de B complètent/complètent A ; l'utilisateur peut raffiner
         // via l'édition de fiche après fusion.
@@ -112,7 +112,7 @@ public final class ModeleDoublons: ObservableObject {
 
     /// Refus explicite : la paire est mémorisée et ne sera plus reproposée.
     public func refuser(_ proposition: PropositionDoublon) {
-        try? entrepotDoublon.decider(proposition.id, statut: .refuse)
+        entrepotDoublon.decider(proposition.id, statut: .refuse)
         charger()
     }
 }

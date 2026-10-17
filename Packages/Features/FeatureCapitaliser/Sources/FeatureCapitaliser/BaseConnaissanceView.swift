@@ -55,7 +55,7 @@ public final class ModeleBaseConnaissance: ObservableObject {
 
     /// Charge toutes les entités non supprimées.
     public func charger() {
-        entites = (try? entrepot.toutes()) ?? []
+        entites = entrepot.toutes()
     }
 
     /// Entités d'un type filtrées par la recherche.
@@ -295,13 +295,13 @@ public final class ModeleFicheEntite: ObservableObject {
     /// Dénomination de l'autre extrémité d'une relation.
     public func denominationRelation(_ relation: RelationEntites) -> String {
         let autreId = relation.idSource == id ? relation.idCible : relation.idSource
-        let autre = try? entrepot.chercher(id: autreId)
+        let autre = entrepot.chercher(id: autreId)
         return autre?.denomination ?? "Entité supprimée"
     }
 
     /// Enregistre la fiche et journalise les champs modifiés.
     public func enregistrer() {
-        guard var entite = try? entrepot.chercher(id: id) else { return }
+        guard var entite = entrepot.chercher(id: id) else { return }
         var champsModifies: [String] = []
         if entite.denomination != denomination { champsModifies.append("denomination"); entite.denomination = denomination }
         if (entite.prenom ?? "") != prenom { champsModifies.append("prenom"); entite.prenom = prenom.isEmpty ? nil : prenom }
@@ -340,13 +340,13 @@ public final class ModeleFicheEntite: ObservableObject {
             }
         }
         entite.updatedAt = Date()
-        try? entrepot.enregistrer(entite)
+        entrepot.enregistrer(entite)
         if !champsModifies.isEmpty {
-            try? entrepot.journaliser(
+            entrepot.journaliser(
                 VersionEntite(entiteId: id, champsModifies: champsModifies, appareil: appareil)
             )
         }
-        historique = (try? entrepot.historique(entiteId: id)) ?? []
+        historique = entrepot.historique(entiteId: id)
     }
 
     /// Demande d'ouverture d'un élément du module Exploiter.
